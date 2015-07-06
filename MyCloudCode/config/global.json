@@ -1,0 +1,17 @@
+{
+  "global": {
+    "parseVersion": "1.4.2"
+  },
+  "applications": {
+    "Cooked App": {
+      "applicationId": "BrndBVrRczElKefgG3TvjCk3JYxtd5GB2GMzKoEP",
+      "masterKey": "Mi1Mi0TPEcIaw5sXZrYz5fBnReJ4KBmf4qfBkMcV"
+    },
+    "MyCloudCode": {
+      "link": "Cooked App"
+    },
+    "_default": {
+      "link": "Cooked App"
+    }
+  }
+}

@@ -11,6 +11,30 @@ Parse.Cloud.afterSave("Group", function(request) {
 	}
 });
 
+Parse.Cloud.afterSave(Parse.User, function(request) {
+	if(request.object.existed() === false){
+		//Brand new User. Let's set their ACL!
+		var acl = new Parse.ACL();
+		acl.setPublicReadAccess(true);
+		acl.setWriteAccess(request.user.id, true);
+		request.user.setACL(acl);
+		request.user.save();
+	}
+});
+
+/*
+ * This will give us one of 5 responses depending on the user's status within the group
+ * 
+ * returns 1 - If User is a Member
+ * returns 2 - If User is an Admin
+ * returns 3 - If User has already been invited (and not yet accepted invitation)
+ * returns 4 - If User has no outstanding association (no request to join yet made, no invitation)
+ * returns 5 - If User has already requested to join
+ */
+Parse.Cloud.define("getUserStatusForGroup", function(request, response) {
+	console.log("Group id: " + request.params.group);
+	response.success(2);
+});
 
 function CreateRolesForNewGroup(newGroup, user) {
 	// By specifying no write privileges for the ACL, we can ensure the role cannot be altered.

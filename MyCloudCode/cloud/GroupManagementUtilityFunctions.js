@@ -183,36 +183,93 @@ function RemoveUserFromGroupRole(group, user, roleName) {
 	});
 }
 
+
+
+/*
+ * 	CreateRoleForGroup
+ *
+ *	@param group The group we are creating 
+ *  @param roleType The suffix to append to the 'name' field of the Role we will be creating
+ *			This fits into the format of group.groupHashId + '{roleType}'
+ *  @param superRole OPTIONAL_PARAM Passing a point to a Role here will add the superRole param under the new roles' "roles" property
+ *  @param hashId OPTIONAL_PARAM Allows us to pass in a hashId for when adding
+ *			users to roles for brand new groups that don't yet have their hashId set
+ *
+ *	@return A Parse.Promise once the task has been completed
+ *  
+ *	Adds the user to the Parse.Role which has admin or member (or other?) permissions for the group in question
+ */
+function CreateRoleForGroup(group, roleType, hashId, superRole) {
+	// If the group is brand new, then the role doesn't exist yet. 
+	// We don't need to query to find that out
+
+	console.log("Adding user to group " + group.id + " for roleType " + roleType);
+	console.log("Group Hash ID is: " + group.get("groupHashId"));
+
+	if(typeof hashId === 'undefined'){
+   		hashId = group.get("groupHashId");
+ 	}
+
+ 	var roleName = hashId + "_" + roleType;
+
+ 	console.log("Full roleName is: " + roleName);
+
+	console.log("The role didn't exist yet. So we're creating it");
+	var roleACL = new Parse.ACL();
+	roleACL.setPublicReadAccess(true);
+	var theRole = new Parse.Role(roleName, roleACL);
+
+	if(superRole)
+		theRole.getRoles().add(superRole);
+
+	console.log("We are about to save our NEW GROUP role");
+	return theRole.save().then(function(savedRole){
+		console.log("We did it");
+		console.log(JSON.stringify(savedRole, null, 4));
+		return Parse.Promise.as(savedRole);
+	});
+}
+
 /* 
  * 	CreateRolesForNewGroup
  *
  *	@param newGroup This is the newly created group. This function should only be called on new groups
  */
 exports.CreateRolesForNewGroup = function CreateRolesForNewGroup(newGroup, user, request) {
+	if(newGroup.isNew() === false){
+		return Parse.Promise.error("Trying to create roles for a pre-existing group");
+	}
+	var that = this;
 	// By specifying no write privileges for the ACL, we can ensure the role cannot be altered.
 	var roleACL = new Parse.ACL();
 	roleACL.setPublicReadAccess(true);
 
 	var hashString = JSON.stringify(request, null, 0) + JSON.stringify(newGroup, null, 0) + JSON.stringify(user, null, 0);
-	console.log("Hashing string: " + hashString);
 	var theHash = StringHash.hashCode(hashString);
-	console.log("Hash is " + theHash);
+
+	
+	var adminRoleType = "admin";
+	var memberRoleType = "member";
 
 	var adminRoleName = theHash + '_admin';
 	var memberRoleName = theHash + '_member';
 
-	console.log("Admin role name will be " + adminRoleName);
+	 
 
-	return AddUserToGroupRole(newGroup, user, adminRoleName).then(
+	return AddUserToGroupRole(newGroup, user, adminRoleType, theHash).then(
 		function(adminRole) {
-			console.log("Created admin group: " + adminRoleName);
+			//We have added our user to the admin group, so move on
+			that.adminRole = adminRole;
 
-			return AddUserToGroupRole(newGroup, user, memberRoleName).then(
+			// return AddUserToGroupRole(newGroup, user, memberRoleType, theHash).then(
+				return CreateRoleForGroup(newGroup, memberRoleType, theHash, that.adminRole).then(
 				function(memberRole) {
+
+					//We have added our user to the member group, so move on
+					console.log("C");
+					console.log(JSON.stringify(memberRole, null, 4));
 					console.log("Created member group: " + memberRoleName);
 
-					//TODO: See if this works with an additional save
-					// memberRole.relation("roles").add(adminRole);
 
 					var groupACL = new Parse.ACL();
 					groupACL.setPublicReadAccess(true);

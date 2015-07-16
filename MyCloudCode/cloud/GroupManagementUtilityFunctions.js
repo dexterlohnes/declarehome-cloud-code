@@ -108,44 +108,49 @@ function removeUserFromAdminsRelation(group, user) {
  *  @param user The Parse.User which we are to add to the group
  *  @param roleName The 'name' field of the Role we will be adding the user to. 
  *			This is in the format ALREADY of group.groupHashId + '[admin/member]'
+ *  @param hashId OPTIONAL_PARAM Allows us to pass in a hashId for when adding
+ *			users to roles for brand new groups that don't yet have their hashId set
  *
  *	@return A Parse.Promise once the task has been completed
  *  
  *	Adds the user to the Parse.Role which has admin or member (or other?) permissions for the group in question
  */
-function AddUserToGroupRole(group, user, roleName) {
+function AddUserToGroupRole(group, user, roleType, hashId) {
 	// If the group is brand new, then the role doesn't exist yet. 
 	// We don't need to query to find that out
 
-	console.log("Adding user to group " + group.id + " for rolename " + roleName);
+	console.log("Adding user to group " + group.id + " for roleType " + roleType);
+	console.log("Group Hash ID is: " + group.get("groupHashId"));
+
+	if(typeof hashId === 'undefined'){
+   		hashId = group.get("groupHashId");
+ 	}
+
+ 	var roleName = hashId + "_" + roleType;
+
+ 	console.log("Full roleName is: " + roleName);
 
 	var queryRole = new Parse.Query(Parse.Role);
 	queryRole.equalTo("name", roleName);
 
-	return queryRole.first({
-		success: function(theRole) {
-			//If we didn't get the role it's because it doesn't exist yet, so let's create it
-			if (!theRole) {
+	return queryRole.first().then(function(theRole){
+		if (!theRole) {
 				console.log("The role didn't exist yet. So we're creating it");
 				var roleACL = new Parse.ACL();
 				roleACL.setPublicReadAccess(true);
 				theRole = new Parse.Role(roleName, roleACL);
 			}
-			console.log("Adding role");
 			theRole.getUsers().add(user);
-			return theRole.save();
-			// return theRole.save().then({
-			// 	success:function(theRole){
-			// 		console.log("Returning a saved role: ObjectID: " + savedRole.id + "name: " + savedRole.name);
-			// 		return Parse.Promise.as(theRole);
-			// 	}
-			// });
-		},
-		error: function(error) {
+			
+			return theRole.save().then(function(savedRole){
+				return Parse.Promise.as(savedRole);
+			});
+	},function(error) {
 			return Parse.Promise.error("Error hit. Code: " + error.code + ". Message: " + error.message);
-		}
 	});
+ 
 }
+
 
 /*
  * 	RemoveUserFromGroupRole
@@ -278,14 +283,25 @@ exports.CreateRolesForNewGroup = function CreateRolesForNewGroup(newGroup, user,
 					groupACL.setRoleWriteAccess(adminRoleName, true);
 					newGroup.setACL(groupACL);
 
+					
+					// console.log("Beginning fetch of roles");
+					// return Parse.Object.fetchAll([that.adminRole, memberRole]).then(function(list){
+					// 	console.log("Completed our fetch");
+					// 	//Fetch our admins and member roles so we can add them to our newGroup
+					// 	newGroup.set("adminsRole", list[0]);
+					// 	newGroup.set("membersRole", list[1]);
 
 
+					// 	console.log("Created roles for the new group");
 
+					// 	return Parse.Promise.as(theHash);
+					// });
+
+					newGroup.set("adminsRole", that.adminRole);
+					newGroup.set("membersRole", memberRole);
 					console.log("Created roles for the new group");
-
 					return Parse.Promise.as(theHash);
 
-					// return newGroup.save();
 				});
 		});
 };

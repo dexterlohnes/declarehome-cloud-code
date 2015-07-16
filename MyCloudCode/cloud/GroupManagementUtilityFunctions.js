@@ -8,7 +8,7 @@ var StringHash = require('cloud/StringHash.js');
  */ 
 function addUserToGroupsMembersRelation(group, user) {
 	//1 Get a handle on the group's members relation
-	var membersRel = group.relation("members");
+	var membersRel = group.get("membersRole").getUsers();
 	//2 Add our user to the group's members relation
 	membersRel.add(user);
 	group.save().then(function(theGroup){
@@ -33,7 +33,7 @@ function addUserToGroupsMembersRelation(group, user) {
  */ 
 function addUserToGroupsAdminsRelation(group, user) {
 	//1 Get a handle on the group's admins relation
-	var adminsRel = group.relation("admins");
+	var adminsRel = group.get("adminsRole").getUsers();
 	//2 Add our user to the group's admins relation
 	adminsRel.add(user);
 	group.save().then(function(theGroup){
@@ -61,7 +61,7 @@ function addUserToGroupsAdminsRelation(group, user) {
  */ 
 function removeUserFromMembersRelation(group, user) {
 	//1 Get a handle on the group's members relation
-	var membersRel = group.relation("members");
+	var membersRel = group.get("membersRole").getUsers();
 	//2 Remove our user from the group's members relation
 	membersRel.remove(user);
 	group.save().then(function(theGroup){
@@ -85,7 +85,7 @@ function removeUserFromMembersRelation(group, user) {
  */ 
 function removeUserFromAdminsRelation(group, user) {
 	//1 Get a handle on the group's admins relation
-	var adminsRel = group.relation("admins");
+	var adminsRel = group.get("adminsRole").getUsers();
 	//2 Remove our user from the group's admins relation
 	adminsRel.remove(user);
 	group.save().then(function(theGroup){
@@ -104,7 +104,7 @@ function removeUserFromAdminsRelation(group, user) {
 /*
  * 	AddUserToGroupRole
  *
- *	@param group The object id of the group we are to add the user to
+ *	@param group The  group we are to add the user to
  *  @param user The Parse.User which we are to add to the group
  *  @param roleName The 'name' field of the Role we will be adding the user to. 
  *			This is in the format ALREADY of group.groupHashId + '[admin/member]'
@@ -150,7 +150,7 @@ function AddUserToGroupRole(group, user, roleName) {
 /*
  * 	RemoveUserFromGroupRole
  *
- *	@param group The object id of the group we are to remove the user from
+ *	@param group The group we are to remove the user from
  *  @param user The Parse.User which we are to add to the group
  *  @param roleName The 'name' field of the Role we will be removing the user from. 
  *			This is in the format ALREADY of group.groupHashId + '[admin/member]'
@@ -161,7 +161,7 @@ function AddUserToGroupRole(group, user, roleName) {
  */
 function RemoveUserFromGroupRole(group, user, roleName) {
 
-	console.log("Adding user to group " + group.id + " for rolename " + roleName);
+	console.log("Removing user from group " + group.id + " for rolename " + roleName);
 
 	var queryRole = new Parse.Query(Parse.Role);
 	queryRole.equalTo("name", roleName);

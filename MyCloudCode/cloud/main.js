@@ -1,5 +1,5 @@
 var userstatusForGroupImport = require('cloud/UserStatusForGroup.js');
-var Groups = require('cloud/Controllers/Groups.js');
+var GroupsInterface = require('cloud/Interfaces/GroupsInterface.js');
 var ContractsMod = require('cloud/Interfaces/ContractsInterface.js');
 
 
@@ -23,10 +23,6 @@ Parse.Cloud.define("inviteToGroup", function(request, response) {
 		console.error("Sending of invitation failed"); //TODO: Make this more informative. What group, who invited, who invitee?
 		response.error(error);
 	});
-
-    
-
-	
 });
 
 Parse.Cloud.beforeSave("Group", function(request, response) {
@@ -36,7 +32,7 @@ Parse.Cloud.beforeSave("Group", function(request, response) {
 	console.log("In before save for group with name: " + group.get("name"));
 	if (group.isNew()) {
 		console.log("Group is new so going to create roles for new group");
-		Groups.CreateRolesForNewGroup(group, request.user, request).then(
+		GroupsInterface.CreateRolesForNewGroup(group, request.user, request).then(
 			function(hashString){
 			console.log("Retreived hashstring: " + hashString);
 			group.set("groupHashId", hashString);

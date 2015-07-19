@@ -3,47 +3,7 @@ var GroupsInterface = require('cloud/Interfaces/GroupsInterface.js');
 var ContractsMod = require('cloud/Interfaces/ContractsInterface.js');
 
 
-Parse.Cloud.afterSave("Group", function(request) {
-	var group = request.object;
-
-	if(group.get("rolesInitialized") === false || group.get("rolesInitialized") === undefined){
-		//TODO: Clean this up in next refactor
-
-		var membersRole = group.get("membersRole");
-
-		var adminsRole = group.get("adminsRole");
-
-		var roles = [];
-
-		console.log("In after save for group");
-
-		membersRole.fetch().then(function(){
-			console.log("Members Role: " + JSON.stringify(membersRole, null, 4));
-			if(membersRole.get("group") === undefined){
-			console.log("Group was undefined for membersRole so setting and saving");
-			membersRole.set("group", group);
-			roles.push(membersRole);
-			membersRole.save(null, {useMasterKey: true});
-			}
-		});
-
-		
-		adminsRole.fetch().then(function(){
-			console.log("Admins Role: " + JSON.stringify(adminsRole, null, 4));
-			if(adminsRole.get("group") === undefined){
-				console.log("Group was undefined for adminsRole so setting and saving");
-				adminsRole.set("group", group);
-				roles.push(adminsRole);
-				adminsRole.save(null, {useMasterKey: true});
-			}
-		});
-
-		group.set("rolesInitialized", true);
-		group.save();
-
-	}
-
-});
+// function inviteToGroup(inviteeEmail, invitedBy, group) {
 
 Parse.Cloud.define("inviteToGroup", function(request, response) {
 	//Might have to change this to .get("inviteeEmail");

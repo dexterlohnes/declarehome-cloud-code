@@ -2,9 +2,9 @@ var Users = require('cloud/Controllers/Users.js');
 var Contracts = require('cloud/Controllers/Contracts.js');
 var Mail = require('cloud/Interfaces/MailInterface.js');
 
-function signNewUserUpForAllGroupsTheyHaveBeenInvitedTo = function(newUser) {
+// function signNewUserUpForAllGroupsTheyHaveBeenInvitedTo = function(newUser) {
 	
-}
+// }
 
 /*
  *	requestMembershipToGroup - This is a root level call

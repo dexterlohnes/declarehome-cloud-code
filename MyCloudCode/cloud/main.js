@@ -35,7 +35,10 @@ Parse.Cloud.beforeSave("Group", function(request, response) {
 		GroupsInterface.CreateRolesForNewGroup(group, request.user, request).then(
 			function(hashString){
 			console.log("Retreived hashstring: " + hashString);
-			group.set("groupHashId", hashString);
+			if(group.get("groupHashId") === null){
+				console.log("groupHashId is still null, setting now");
+				group.set("groupHashId", hashString);	
+			}
 			console.log("We created them so responding with success");
 			var adminOf = request.user.relation("adminOf");
 			// adminOf.add(group);

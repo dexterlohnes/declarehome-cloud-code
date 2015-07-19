@@ -31,7 +31,15 @@ function acceptMembershipToGroup(invitee, contract){
 }
 
 function getAllContractsForNewUser(invitee){
-	
+	var GroupContract = Parse.Object.extend("GroupContract");
+	var query = new Parse.Query(GroupContract);
+	query.equalTo("inviteeEmail", invitee.get("email"));
+	query.find().then(function(allInvites){
+		
+	},function(error){
+		console.log("Error when querying for invites for user " + invitee.id);
+		return error;
+	});
 }
 
 /*

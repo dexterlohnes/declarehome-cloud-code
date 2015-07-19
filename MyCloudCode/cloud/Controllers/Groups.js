@@ -5,6 +5,9 @@
  ***********************************************************************************************
  ***********************************************************************************************/
 
+var MEMBERS_ROLE = "membersRole";
+var ADMINS_ROLE = "adminsRole";
+
 /*
  * 	CreateRoleForGroup
  *
@@ -38,6 +41,7 @@ exports.CreateRoleForGroup = function CreateRoleForGroup(group, roleType, hashId
 	var roleACL = new Parse.ACL();
 	roleACL.setPublicReadAccess(true);
 	var theRole = new Parse.Role(roleName, roleACL);
+	theRole.set("group", group);
 
 	if(superRole)
 		theRole.getRoles().add(superRole);
@@ -125,6 +129,7 @@ exports.AddUserToGroupRole = function AddUserToGroupRole(group, user, roleType, 
 				var roleACL = new Parse.ACL();
 				roleACL.setPublicReadAccess(true);
 				theRole = new Parse.Role(roleName, roleACL);
+				theRole.set("group", group);
 			}
 
 			theRole.getUsers().add(user);

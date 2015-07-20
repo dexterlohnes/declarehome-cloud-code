@@ -2,6 +2,11 @@ var Users = require('cloud/Controllers/Users.js');
 var Contracts = require('cloud/Controllers/Contracts.js');
 var Mail = require('cloud/Interfaces/MailInterface.js');
 
+var STATUS_EXISTING_USER_INVITED = "UserInvited";
+var STATUS_NON_USER_INVITED = "NonUserInvited";
+var STATUS_USER_REQUESTED_MEMBERSHIP = "UserRequested";
+var STATUS_CONTRACT_COMPLETED = "Signed";
+
 /*
  *	requestMembershipToGroup - This is a root level call
  *
@@ -15,6 +20,30 @@ exports.requestMembershipToGroup = function requestMembershipToGroup(requester, 
 	.then(function(theContract){	
 		Mail.sendMembershipRequestEmailToAdminsOfGroup(requester, group);
 	});
+};
+
+
+exports.acceptAllOpenContractsForNewUser = function acceptAllOpenContractsForNewUser(newUser, contracts){
+	console.log("In acceptAllOpenContractsForNewUser");
+	console.log("Contracts: " + JSON.stringify(contracts, null, 4));
+	if(contracts === undefined){
+		return Contracts.getAllContractsForNewUser(newUser).then(function(allContracts){
+			console.log("Found all the contracts: " + JSON.stringify(allContracts, null, 4));
+			return acceptAllOpenContractsForNewUser(newUser, allContracts);		
+		});
+	}
+
+	var nextContract = contracts.pop();
+	console.log("Next contract for signing: " + JSON.stringify(nextContract, null, 4));
+	if(nextContract === undefined){
+		return Parse.Promise.as("Joined all of our open contracts (if there were any)");
+	}else{
+		Contracts.acceptMembershipToGroup(newUser, nextContract).then(function(){
+			console.log("Should have joined another contract");
+			acceptAllOpenContractsForNewUser(newUser, contracts);
+		});
+	}
+	
 };
 
 /*

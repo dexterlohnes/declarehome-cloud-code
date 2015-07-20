@@ -5,10 +5,15 @@
  ***********************************************************************************************
  ***********************************************************************************************/
 
+var GroupsInterface = require('cloud/Interfaces/GroupsInterface.js');
+
+
  var STATUS_EXISTING_USER_INVITED = "UserInvited";
  var STATUS_NON_USER_INVITED = "NonUserInvited";
  var STATUS_USER_REQUESTED_MEMBERSHIP = "UserRequested";
  var STATUS_CONTRACT_COMPLETED = "Signed";
+
+ exports.STATUS_EXISTING_USER_INVITED = STATUS_EXISTING_USER_INVITED;
 
 
  /*
@@ -21,18 +26,55 @@
  * @return A Parse.Promise containing the signed (in the event of success) contract or an error in case it failed
  *
  */
-function acceptMembershipToGroup(invitee, contract){
-	//Verify contract is for this user
-	//Verify the contract has "invitedBy" filled in
-	//Fill in the inviteeEmail and invitee fields
-	//Change status of contract
-	//Add user to the group
-	
-}
+exports.acceptMembershipToGroup = function acceptMembershipToGroup(invitee, contract){
+	var emailsMatch = (invitee.get("email") === contract.get("inviteeEmail"));
+	console.log("Invitee is: " + JSON.stringify(invitee, null, 4));
+	console.log("Contract is: " + JSON.stringify(contract, null, 4));
+	var usersMatch = contract.get("invitee") === undefined ? false : (invitee.id === contract.get("invitee").id);
 
-function getAllContractsForNewUser(invitee){
+	//Verify contract is for this user
+	if((emailsMatch === true || usersMatch === true) === false){
+		return Parse.Promise.error("This contract doesn't belong to this user");
+	}
+
+	//Verify the contract has "invitedBy" filled in
+	if(contract.get("invitedBy") === undefined || contract.get("invitedBy") === null){
+		return Parse.Promise.error("This contract isn't signed by an admin");
+	}
+
+	if(contract.get("status") === STATUS_USER_REQUESTED_MEMBERSHIP || contract.get("status") === STATUS_CONTRACT_COMPLETED){
+		return Parse.Promise.error("This contract is not in a state for this invitee to accept membership. They either haven't been invited or they already have accepted it");
+	}
+
+	//Fill in the inviteeEmail and invitee fields
+	contract.set("inviteeEmail", invitee.get("email"));
+	contract.set("invitee", invitee);
+
+	//Change status of contract
+	contract.set("status", STATUS_CONTRACT_COMPLETED);
+
+	return contract.save().then(function(cont){
+		//Add user to the group
+		return GroupsInterface.addUserToGroupAsMember(invitee, contract.get("group"));
+	});
+
 	
-}
+};
+
+exports.getAllContractsForNewUser = function getAllContractsForNewUser(invitee){
+
+	var GroupContract = Parse.Object.extend("GroupContract");
+	var query = new Parse.Query(GroupContract);
+	query.equalTo("inviteeEmail", invitee.get("email"));
+	query.equalTo("status", STATUS_NON_USER_INVITED);
+	//Make sure we receive each Groupcontract's 'group' property when we fetch them
+	query.include("group");
+	query.include("invitee");
+	// query.include("group.membersRole");
+	// query.include("group.membersRole.users");
+	return query.find();
+
+};
 
 /*
  *	createContractWithInviteeEmailFromUserForGroup

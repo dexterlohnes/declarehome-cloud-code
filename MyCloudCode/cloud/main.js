@@ -1,6 +1,6 @@
 var userstatusForGroupImport = require('cloud/UserStatusForGroup.js');
 var GroupsInterface = require('cloud/Interfaces/GroupsInterface.js');
-var ContractsMod = require('cloud/Interfaces/ContractsInterface.js');
+var ContractsInterface = require('cloud/Interfaces/ContractsInterface.js');
 
 
 Parse.Cloud.afterSave("Group", function(request) {
@@ -55,7 +55,7 @@ Parse.Cloud.define("inviteToGroup", function(request, response) {
     console.log("Fetching group with id: " + group.id);
 	group.fetch().then(function(){
 		console.log("Fetch finished. Now to invite to group");
-		ContractsMod.inviteToGroup(request.params.inviteeEmail, request.user, group)
+		ContractsInterface.inviteToGroup(request.params.inviteeEmail, request.user, group)
 		.then(function(succeeded){
 			response.success("Whoopee it worked!");
 		});
@@ -75,7 +75,7 @@ Parse.Cloud.beforeSave("Group", function(request, response) {
 		GroupsInterface.CreateRolesForNewGroup(group, request.user, request).then(
 			function(hashString){
 			console.log("Retreived hashstring: " + hashString);
-			if(group.get("groupHashId") === null){
+			if(group.get("groupHashId") === undefined){
 				console.log("groupHashId is still null, setting now");
 				group.set("groupHashId", hashString);	
 			}
@@ -108,12 +108,19 @@ Parse.Cloud.beforeSave("Group", function(request, response) {
 // TODO: Move this to beforeSave, save us an entire api call cycle
 Parse.Cloud.afterSave(Parse.User, function(request) {
 	if (request.object.existed() === false) {
-		//Brand new User. Let's set their ACL!
-		var acl = new Parse.ACL();
-		acl.setPublicReadAccess(true);
-		acl.setWriteAccess(request.user.id, true);
-		request.user.setACL(acl);
-		request.user.save();
+		console.log("Going to try to accept all contract for new user");
+		ContractsInterface.acceptAllOpenContractsForNewUser(request.user).then(function(){
+			//Brand new User. Let's set their ACL!
+			console.log("Now setting new user's ACL");
+			var acl = new Parse.ACL();
+			acl.setPublicReadAccess(true);
+			acl.setWriteAccess(request.user.id, true);
+			request.user.setACL(acl);
+			request.user.save();
+		});
+		//We want to find all open contracts for this user and accept them 
+
+		
 	}
 });
 

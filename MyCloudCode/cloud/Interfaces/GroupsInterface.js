@@ -67,23 +67,39 @@ exports.CreateRolesForNewGroup = function CreateRolesForNewGroup(newGroup, user,
  * @return A Parse.Promise object once the function is done
  */ 
 exports.addUserToGroupAsMember = function addUserToGroupAsMember(user, group) {
-	//1 Get a handle on the group's members relation
-	var membersRel = group.get("membersRole").getUsers();
-	//2 Add our user to the group's members relation
-	membersRel.add(user);
-	return group.save().then(function(theGroup){
-		//3 then Add our group to the user's memberOf relation
-		var memberOf = user.relation("memberOf");
-		memberOf.add(group);
-		//4 then return a promise 
-		return user.save();
-	}, function(error){
-		console.error("Couldn't add user as member");
-		return Parse.Promise.error("Error! Code: " + error.code + ". Message: " + error.message);
-	});
-	
-};
+	// Parse.Cloud.useMasterKey();
+	console.log("In addUserToGroupAsMember");
+	return group.fetch().then(function(theGroup) {
+		console.log("Fetched the group");
+		//1 Get a handle on the group's members role
+		var membersRole = theGroup.get("membersRole");
+		return membersRole.fetch().then(function(theRole) {
+			console.log("Fetched the members role");
+			console.log("The members role: " + JSON.stringify(theRole, null, 4));
+			var membersRel = theRole.getUsers();
+			//2 Add our user to the group's members relation
+			membersRel.add(user);
+			console.log("Members relation: " + JSON.stringify(membersRel, null, 4));
+			return theRole.save(null, {useMasterKey:true}).then(function(theRoleAgain) {
+				console.log("Saved our members role");
+				//3 then Add our group to the user's memberOf relation
+				var memberOf = user.relation("memberOf");
+				console.log("The group: " + JSON.stringify(theGroup, null, 4));
+				memberOf.add(theGroup);
+				console.log("The relation after adding group, before save: " + JSON.stringify(memberOf, null, 4));
 
+				//4 then return a promise 
+				return memberOf.save(null, {useMasterKey : true	});
+			});
+
+		}, function(error) {
+			console.error("Couldn't add user as member");
+			console.error("Error! Code: " + error.code + ". Message: " + error.message);
+			return Parse.Promise.error("Error! Code: " + error.code + ". Message: " + error.message);
+		});
+	});
+
+};
 /*
  * addUserToGroupsAdminsRelation
  * @param group The Group object we want to add our user to as an admin

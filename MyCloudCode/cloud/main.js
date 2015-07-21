@@ -23,6 +23,7 @@ Parse.Cloud.afterSave("Group", function(request) {
 			console.log("Group was undefined for membersRole so setting and saving");
 			membersRole.set("group", group);
 			roles.push(membersRole);
+			//Now just save and the user will update their own 'memberOf' array :)
 			membersRole.save(null, {useMasterKey: true});
 			}
 		});
@@ -34,6 +35,8 @@ Parse.Cloud.afterSave("Group", function(request) {
 				console.log("Group was undefined for adminsRole so setting and saving");
 				adminsRole.set("group", group);
 				roles.push(adminsRole);
+				//At this time the user also does not know that they are an admin of this, so make sure they know now
+				adminsRole.getUsers().add(request.user);
 				adminsRole.save(null, {useMasterKey: true});
 			}
 		});
@@ -89,20 +92,68 @@ Parse.Cloud.beforeSave("Group", function(request, response) {
 	}
 });
 
-// Parse.Cloud.beforeSave("Role", function(request, response) {
-// 	var hashId;
-// 	var isMemberRole;
-// 	var isAdminRole;
 
-// 	var operation = request.operation.op(users);
 
-// 	//get our array of added users
-// 	var usersAdded = operation.added();
 
-// 	//get our array of removed users
-// 	operation.
 
-// }
+Parse.Cloud.beforeSave(Parse.Role, function(request, response) {
+
+	//'roleName' is in format of "{group.groupHashId}_{[member/admin]}""
+	var roleName = request.object.get("name");
+	var roleIsAdmin = roleName.split("_")[1] === "admin"; //If the second half after the '_' char isn't equal to 'admin' we assume it equals 'member'
+
+	//We want to ensure that when we add or remove a user from a Role, that propogates to the users' management of their "memberOf" and "adminOf" relations
+	//Steps for the algorithm
+	//1) Get the Op.Relation object representing the changes to the Role's 'users' property this save cycle
+	//2) For each user added to the Role, add Role.group to the user's "memberOf" or "adminOf" property
+	//3) For each user removed from the Role, remove Role.group from the user's "memberOf" or "adminOf" property
+	console.log("Printing role in beforesave");
+	console.log(JSON.stringify(request.object, null, 4));
+	var usersOp = request.object.op("users");
+	var rolesGroup;
+	//If this is a new role, we need to grab the group in a backwards kind of way since it technically can't be accessed straight away
+	if(request.object.isNew()){
+		console.log("Role is new so getting group op");
+		console.log("op: " + JSON.stringify(groupOp, null, 4));
+		var groupOp = request.object.op("group");
+	}
+
+	if(usersOp){ //This only exists if we've added or removed a user
+		var allUsersAdded = usersOp.added(); //An array of _User Pointers, all of which were added to this Role this save op
+		console.log("Added " + allUsersAdded.length + "users to role");
+		for(var i = 0; i < allUsersAdded.length; i++){
+			//Add the current Role's 'group' object to the 'memberOf' relation of the user we have added to this role
+			var addedUser = allUsersAdded[i];
+			console.log("Updating user with id: " + addedUser.id);
+			var roletype = roleIsAdmin ? "admin" : "member";
+			console.log("Role is " + roletype);
+			var group = request.object.get("group");
+			console.log("Role's group is " + JSON.stringify(group, null, 4));
+			if(roleIsAdmin === true){
+				addedUser.relation("adminOf").add(request.object.get("group"));
+			}else{
+				addedUser.relation("memberOf").add(request.object.get("group"));
+			}
+			console.log("Now saving user with id " + addedUser.id);
+			addedUser.save(null, {useMasterKey: true});
+		}
+
+		var allusersRemoved = usersOp.removed(); //An array of _User Pointers, all of which were removed from this Role this save op
+		for(var j = 0; j < allusersRemoved.length; j++){
+			//Remove the current Role's 'group' object to the 'memberOf' relation of the user we have added to this role
+			var removedUser = allusersRemoved[i];
+			if(roleIsAdmin === true)
+				removedUser.relation("adminOf").remove(request.object.get("group"));
+			else
+				removedUser.relation("memberOf").remove(request.object.get("group"));
+			removedUser.save(null, {useMasterKey: true});
+		}
+
+	}
+	
+	response.success();
+
+});
 
 
 // TODO: Move this to beforeSave, save us an entire api call cycle

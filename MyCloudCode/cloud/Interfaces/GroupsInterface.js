@@ -2,6 +2,20 @@ var StringHash = require('cloud/Utilities/StringHash.js');
 var Groups = require('cloud/Controllers/Groups.js');
 
 
+/*
+ * This will eventually call response.success(x) with x === one of 5 responses depending on the user's status within the group
+ * 
+ * response.success(1) - If User is a Admin
+ * response.success(2) - If User is an Member
+ * response.success(3) - If User has already been invited (and not yet accepted invitation)
+ * response.success(4) - If User has already requested to join
+ * response.success(5) - If User has no outstanding association (no request to join yet made, no invitation)
+ */
+Parse.Cloud.define("getUserStatusForGroup", function(request, response) {
+	console.log("In getUserStatusForGroup");
+	Groups.userStatusForGroup(request, response);
+});
+
 /* 
  * 	CreateRolesForNewGroup
  *
@@ -27,8 +41,8 @@ exports.CreateRolesForNewGroup = function CreateRolesForNewGroup(newGroup, user,
 	var memberRoleName = theHash + '_member';
 
 	 
-
-	return Groups.AddUserToGroupRole(newGroup, user, adminRoleType, theHash).then(
+	// return Groups.AddUserToGroupRole(newGroup, user, adminRoleType, theHash).then(
+		return Groups.CreateRoleForGroup(newGroup, adminRoleType, theHash).then(
 		function(adminRole) {
 			//We have added our user to the admin group, so move on
 			that.adminRole = adminRole;

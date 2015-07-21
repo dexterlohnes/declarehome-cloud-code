@@ -5,6 +5,93 @@
  ***********************************************************************************************
  ***********************************************************************************************/
 
+
+/*
+ *	@return a Parse.Promise containing the Number 1-5 depending on what the user status
+ */
+exports.userStatusForGroup = function userStatusForGroup(request, response) {
+	checkUserIsAdmin(request,response)
+	.then(function(wasAdmin){
+		console.log("Checked if the user was an admin");
+		if(wasAdmin) console.log("They were"); else console.log("They weren't");
+		if(wasAdmin === true) response.success(1); 
+		else if(wasAdmin === false){
+			console.log("Checking if user is member");
+			checkUserIsMember(request, response).then(function(wasMember){
+				console.log("Checked if the user was a member");
+				if(wasMember) console.log("They were"); else console.log("They weren't");
+				if(wasMember === true) response.success(2);
+				else response.success(5);
+			});
+			// .then(response.success(5)));
+		}
+	});
+};
+
+/*
+ * This function assumes the following params
+ *
+ ~ request.user
+ ~ request.params.group // The id as a String of the group which we are checking the user for
+ *
+ * @return Parse.Promise containing a BOOL. true if the user is an admin, false elsewise
+ */
+ function checkUserIsAdmin(request, response, funcsArray) {
+
+	console.log("In checkUserIsAdmin");
+	console.log("Request is: " + JSON.stringify(request, null, 4));
+	console.log("User is: " + JSON.stringify(request.user, null, 4));
+
+	//Get a query limited to the groups in the user's "adminOf" relation
+	var query = request.user.relation("adminOf").query();
+	//Limit our query to the group passed in with our request
+	query.equalTo("objectId", request.params.group);
+
+	return query.count().then(function(theCount){
+		if(theCount > 0){
+			return Parse.Promise.as(true);
+		}else{
+			return Parse.Promise.as(false);
+		}
+	}, function(error){
+		console.error("Error when finding if user was admin");
+		console.error("Code: " + error.code + "Message:" + error.message);
+		Parse.Promise.error(error);
+	});
+
+}
+
+	
+/*
+ * This function assumes the following params
+ *
+ ~ request.user
+ ~ request.params.group // The id as a String of the group which we are checking the user for
+ *
+ * @return Parse.Promise containing a BOOL. true if the user is a member (not an admin!), false elsewise (including if they're an admin!)
+ */
+ function checkUserIsMember(request, response, funcsArray) {
+
+	console.log("In checkUserIsMember");
+
+	//Get a query limited to the groups in the user's "adminOf" relation
+	var query = request.user.relation("memberOf").query();
+	//Limit our query to the group passed in with our request
+	query.equalTo("objectId", request.params.group);
+
+	return query.count().then(function(theCount){
+		if(theCount > 0){
+			return Parse.Promise.as(true);
+		}else{
+			return Parse.Promise.as(false);
+		}
+	}, function(error){
+		console.error("Error when finding if user was member");
+		console.error("Code: " + error.code + "Message:" + error.message);
+		Parse.Promise.error(error);
+	});
+
+}
 /*
  * 	CreateRoleForGroup
  *

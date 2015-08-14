@@ -135,6 +135,9 @@ exports.createContractWithNonUserInviteeEmailFromUserForGroup = function createC
  *	@return A Parse.Promise once the Contract is created and save completes
  */
 exports.createContractWithRequsterForGroup = function createContractWithRequsterForGroup(requester, group){
+
+	console.log("Creating the contract");
+
 	//Create the contract
 	var Contract = Parse.Object.extend("GroupContract");
 	var contract = new Contract();
@@ -145,6 +148,7 @@ exports.createContractWithRequsterForGroup = function createContractWithRequster
 	contract.set("group", group);
 	contract.set("status", STATUS_USER_REQUESTED_MEMBERSHIP);
 
+	console.log("Saving the contract now");
 	//Save it
 	return contract.save();
 };

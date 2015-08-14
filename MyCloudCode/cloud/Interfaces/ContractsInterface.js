@@ -7,6 +7,35 @@ var STATUS_NON_USER_INVITED = "NonUserInvited";
 var STATUS_USER_REQUESTED_MEMBERSHIP = "UserRequested";
 var STATUS_CONTRACT_COMPLETED = "Signed";
 
+Parse.Cloud.define("requestMembershipToGroup", function(request, response) {
+	//Might have to change this to .get("inviteeEmail");
+
+	console.log("CloudCode: User requested membership to group");
+	console.log("User id: " + request.user.id);
+	console.log("Group id: " + request.params.groupId);
+
+	var Group = Parse.Object.extend("Group");
+    var group = new Group();
+    group.id = request.params.groupId;
+
+	exports.requestMembershipToGroup(request.user, group).then( function(theContract) {
+		console.log("Printing contract");
+		console.log(JSON.stringify(theContract, null, 4));
+		if(theContract !== null && theContract !== undefined){
+			console.log("Created a contract for the user");
+			console.log(JSON.stringify(theContract, null, 4));
+			//Send 4 since that is the new status of the user (see android/iphone source for this)
+			response.success(4);	
+		}else{
+			//No contract was created?
+			console.error("Failed to create a contract for the user");
+			response.error(9999);
+		}
+		
+	});
+	
+});
+
 /*
  *	requestMembershipToGroup - This is a root level call
  *
@@ -15,11 +44,9 @@ var STATUS_CONTRACT_COMPLETED = "Signed";
  *	
  *	@return A Parse.Promise
  */
-exports.requestMembershipToGroup = function requestMembershipToGroup(requester, group){
-	return Contracts.createContractWithRequsterForGroup(requester, group)
-	.then(function(theContract){	
-		Mail.sendMembershipRequestEmailToAdminsOfGroup(requester, group);
-	});
+exports.requestMembershipToGroup = function (requester, group){
+	console.log("Going to create a contract for the user");
+	return Contracts.createContractWithRequsterForGroup(requester, group);
 };
 
 

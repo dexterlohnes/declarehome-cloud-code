@@ -29,6 +29,8 @@ exports.sendInvitationEmailToNonUserFromUserForGroup = function sendInvitationEm
  *	
  *	@return A Parse.Promise once the save completes
  */
-exports.sendMembershipRequestEmailToAdminsOfGroup = function sendMembershipRequestEmailToAdminsOfGroup(requester, group){
+exports.sendMembershipRequestEmailToAdminsOfGroup = function sendMembershipRequestEmailToAdminsOfGroup(requester, group, returnPayload){
 	console.log("MEMBERSHIP REQUEST EMAIL WILL HAPPEN HERE");
+	console.log("Return Payload is:\n" + JSON.stringify(returnPayload, null, 4));
+	return Parse.Promise.as(returnPayload);
 };

@@ -129,24 +129,39 @@ Parse.Cloud.beforeSave(Parse.Role, function(request, response) {
 			console.log("Role is " + roletype);
 			var group = request.object.get("group");
 			console.log("Role's group is " + JSON.stringify(group, null, 4));
+			// We also want to update the user's members / admins arrays here which are more easily retreivable on the client than a relation
 			if(roleIsAdmin === true){
 				addedUser.relation("adminOf").add(request.object.get("group"));
+				addedUser.addUnique("adminOfArray", request.object.get("group"));
+				group.addUnique("adminsArray", addedUser);
 			}else{
 				addedUser.relation("memberOf").add(request.object.get("group"));
+				addedUser.addUnique("memberOfArray", request.object.get("group"));
+				group.addUnique("membersArray", addedUser);
 			}
 			console.log("Now saving user with id " + addedUser.id);
+
 			addedUser.save(null, {useMasterKey: true});
+			group.save(null, {useMasterKey: true});
 		}
 
 		var allusersRemoved = usersOp.removed(); //An array of _User Pointers, all of which were removed from this Role this save op
 		for(var j = 0; j < allusersRemoved.length; j++){
 			//Remove the current Role's 'group' object to the 'memberOf' relation of the user we have added to this role
+			// We also want to update the user's members / admins arrays here which are more easily retreivable on the client than a relation
 			var removedUser = allusersRemoved[i];
-			if(roleIsAdmin === true)
+			var group = request.object.get("group");
+			if(roleIsAdmin === true){
 				removedUser.relation("adminOf").remove(request.object.get("group"));
-			else
+				removedUser.remove("adminOfArray", request.object.get("group"));
+				group.remove("adminsArray", addedUser);
+			}else{
 				removedUser.relation("memberOf").remove(request.object.get("group"));
+				removedUser.remove("memberOfArray", request.object.get("group"));
+				group.remove("membersArray", addedUser);
+			}
 			removedUser.save(null, {useMasterKey: true});
+			group.save(null, {useMasterKey: true});
 		}
 
 	}

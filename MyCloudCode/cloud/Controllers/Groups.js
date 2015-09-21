@@ -21,6 +21,7 @@ exports.userStatusForGroup = function userStatusForGroup(request, response) {
 				console.log("Checked if the user was a member");
 				if(wasMember) console.log("They were"); else console.log("They weren't");
 				if(wasMember === true) response.success(2);
+				//Implement this for 3 and 4
 				else response.success(5);
 			});
 			// .then(response.success(5)));

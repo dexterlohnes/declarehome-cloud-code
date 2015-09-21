@@ -5,9 +5,14 @@
  ***********************************************************************************************
  ***********************************************************************************************/
 
+ // Requires are broken if I try to require Contracts, so we're just copying them here
+ var STATUS_EXISTING_USER_INVITED = "UserInvited";
+ var STATUS_NON_USER_INVITED = "NonUserInvited";
+ var STATUS_USER_REQUESTED_MEMBERSHIP = "UserRequested";
+ var STATUS_CONTRACT_COMPLETED = "Signed";
 
 /*
- *	@return a Parse.Promise containing the Number 1-5 depending on what the user status
+ *	@return void Calls response.success once user status has been established
  */
 exports.userStatusForGroup = function userStatusForGroup(request, response) {
 	checkUserIsAdmin(request,response)
@@ -21,8 +26,14 @@ exports.userStatusForGroup = function userStatusForGroup(request, response) {
 				console.log("Checked if the user was a member");
 				if(wasMember) console.log("They were"); else console.log("They weren't");
 				if(wasMember === true) response.success(2);
+				else {
+					//wasMember === false
+					checkUserInvitationStatus(request, response).then(function(status) {
+						response.success(status);
+					});
+				}
 				//Implement this for 3 and 4
-				else response.success(5);
+				// else response.success(5);
 			});
 			// .then(response.success(5)));
 		}
@@ -93,6 +104,71 @@ exports.userStatusForGroup = function userStatusForGroup(request, response) {
 	});
 
 }
+
+/*
+ * This function assumes the following params
+ *
+ ~ request.user
+ ~ request.params.group // The id as a String of the group which we are checking the user for
+ *
+ * @return Parse.Promise containing a int corresponding to 3, 4, or 5 depending on if we are invited, requested membership, or have no contract
+ */
+ function checkUserInvitationStatus(request, response) {
+
+	console.log("In checkUserWasInvitedByAdmin");
+
+	// Get a query for GroupContract objects
+	var requestedMembershipQuery = new Parse.Query("GroupContract");
+	// Limit the query to having a pointer to the current user
+	requestedMembershipQuery.equalTo("invitee", request.user);
+
+	// Limited the group pointer to the group contained in our params
+	var Group = Parse.Object.extend("Group");
+    var groupPlaceholder = new Group();
+    groupPlaceholder.id = request.params.group;
+    requestedMembershipQuery.equalTo("group", groupPlaceholder);
+
+    // Limit the status to "UserRequested" 
+    requestedMembershipQuery.equalTo("status", STATUS_USER_REQUESTED_MEMBERSHIP);
+
+
+    // Get a query for GroupContract objects
+	var givenInvitationQuery = new Parse.Query("GroupContract");
+	// Limit the query to having a pointer to the current user
+	givenInvitationQuery.equalTo("invitee", request.user);
+
+	// Limited the group pointer to the group contained in our params
+	var Group = Parse.Object.extend("Group");
+    var groupPlaceholder = new Group();
+    groupPlaceholder.id = request.params.group;
+    givenInvitationQuery.equalTo("group", groupPlaceholder);
+
+    // Limit the status to "UserInvited" 
+    givenInvitationQuery.equalTo("status", STATUS_EXISTING_USER_INVITED);
+
+
+    var finalQuery = Parse.Query.or(requestedMembershipQuery, givenInvitationQuery);
+
+	return finalQuery.first().then(function(theContract){
+		// No contract, so return 5 indicating failure
+		if(theContract === null || theContract === undefined){
+			return Parse.Promise.as(5);
+		}else if (theContract.get("status") == STATUS_EXISTING_USER_INVITED) {
+			return Parse.Promise.as(3);
+		}else if (theContract.get("status") == STATUS_USER_REQUESTED_MEMBERSHIP) {
+			return Parse.Promise.as(4);
+		}else {
+			console.log("No idea what happened here xxx");
+			return Parse.Promise.as(5);
+		}
+	}, function(error){
+		console.error("Error when finding if user was member");
+		console.error("Code: " + error.code + "Message:" + error.message);
+		Parse.Promise.error(error);
+	});
+
+}
+
 /*
  * 	CreateRoleForGroup
  *

@@ -102,8 +102,8 @@ exports.addUserToGroupAsMember = function addUserToGroupAsMember(user, group) {
 				memberOf.add(theGroup);
 				console.log("The relation after adding group, before save: " + JSON.stringify(memberOf, null, 4));
 
-				//4 then return a promise 
-				return memberOf.save(null, {useMasterKey : true	});
+				//4 then return a promise containing the memberOfRelation
+				return user.save(null, {useMasterKey : true	});
 			});
 
 		}, function(error) {

@@ -55,7 +55,7 @@ exports.acceptMembershipToGroup = function acceptMembershipToGroup(invitee, cont
 
 	return contract.save().then(function(cont){
 		//Add user to the group
-		return GroupsInterface.addUserToGroupAsMember(invitee, contract.get("group"));
+		return GroupsInterface.addUserToGroupAsMember(invitee, cont.get("group"));
 	});
 
 	

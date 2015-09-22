@@ -36,6 +36,46 @@ Parse.Cloud.define("requestMembershipToGroup", function(request, response) {
 	
 });
 
+
+/*
+ * request.user The user we are accepting membership for
+ * request.params.groupId The id of the group we are searching for contracts for
+ */
+Parse.Cloud.define("acceptMembershipToGroup", function(request, response) {
+	
+	// Get a query for GroupContract objects
+	var givenInvitationQuery = new Parse.Query("GroupContract");
+	// Limit the query to having a pointer to the current user
+	givenInvitationQuery.equalTo("invitee", request.user);
+
+	// Limited the group pointer to the group contained in our params
+	var Group = Parse.Object.extend("Group");
+    var groupPlaceholder = new Group();
+    groupPlaceholder.id = request.params.groupId;
+    givenInvitationQuery.equalTo("group", groupPlaceholder);
+
+    // Limit the status to "UserInvited" 
+    givenInvitationQuery.equalTo("status", STATUS_EXISTING_USER_INVITED);
+
+    givenInvitationQuery.first().then(function (theContract) {
+    	if(theContract !== null && theContract !== undefined) {
+		    Contracts.acceptMembershipToGroup(request.user, theContract).then(function(success) {
+		    	//Send 2 since the user is now a member
+				response.success(2);
+			}, function(error) {
+				console.error(error);
+				response.error();
+			});
+		} else {
+			response.error("No invited contract found");
+		}
+    }, function(error) {
+    	console.error(error);
+    	response.error(error);
+    });
+	
+});
+
 /*
  *	requestMembershipToGroup - This is a root level call
  *

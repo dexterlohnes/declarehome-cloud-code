@@ -60,8 +60,50 @@ exports.acceptMembershipToGroup = function acceptMembershipToGroup(invitee, cont
 		//Add user to the group
 		return GroupsInterface.addUserToGroupAsMember(invitee, cont.get("group"));
 	});
+};
 
-	
+/*
+ * approveMembershipForGroup - Function called when an admin wants to approve a user to join a group of which they are an admin
+ *
+ * @param admin *_User The user who is the admin who is signing this contract
+ * @param invitee *_User The user who has requested an invitation to this group
+ * @param contract *GroupContract The contract which the user is signing
+ * 
+ * @return A Parse.Promise containing the user who was added to the group
+ *
+ */
+exports.approveMembershipForGroup = function approveMembershipForGroup(admin, invitee, contract){
+	console.log("Admin is: " + JSON.stringify(admin, null, 4));
+	console.log("Invitee is: " + JSON.stringify(invitee, null, 4));
+	console.log("Contract is: " + JSON.stringify(contract, null, 4));
+	var usersMatch = contract.get("invitee") === undefined ? false : (invitee.id === contract.get("invitee").id);
+
+	//Verify contract is for this user
+	if((usersMatch === true) === false){
+		return Parse.Promise.error("This contract doesn't belong to this user");
+	}
+
+	//Verify the contract has "invitedBy" blank
+	if((contract.get("invitedBy") === undefined || contract.get("invitedBy") === null) === false){
+		return Parse.Promise.error("This contract is already signed by an admin");
+	}
+
+	if(contract.get("status") != STATUS_USER_REQUESTED_MEMBERSHIP){
+		return Parse.Promise.error("This contract is not in a state for this invitee to accept membership. They either haven't been invited or they already have accepted it");
+	}
+
+	// TODO: Verify the admin is actually an admin
+
+	//Fill in the inviteeEmail and invitee fields
+	contract.set("invitedBy", admin);
+
+	//Change status of contract
+	contract.set("status", STATUS_CONTRACT_COMPLETED);
+
+	return contract.save().then(function(cont){
+		//Add user to the group
+		return GroupsInterface.addUserToGroupAsMember(invitee, cont.get("group"));
+	});
 };
 
 exports.getAllContractsForNewUser = function getAllContractsForNewUser(invitee){

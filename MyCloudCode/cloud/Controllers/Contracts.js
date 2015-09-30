@@ -197,3 +197,36 @@ exports.createContractWithRequsterForGroup = function createContractWithRequster
 	//Save it
 	return contract.save();
 };
+
+/*
+ *	inviteUserToGroup
+ *	@param invitee A pointer to the _User who is being invited to join 'group'
+ *	@param invitedBy A pointer to the _User who invited 'invitee'
+ *	@param group A pointer to a Group which the user has been invited to
+ *	
+ *	@return A Parse.Promise dependent on the contract being created, the mail being sent and the notification being sent
+ */
+exports.inviteUserToGroup = function inviteUserToGroup(invitee, invitedBy, group){
+	return Contracts.createContractWithInviteeFromUserForGroup(invitee, invitedBy, group).then(function(theContract) {
+		//If something isn't working, it might be because we need to wrap this line in a parse return
+		return Mail.sendInvitationEmailToUserFromUserForGroup(invitee, invitedBy, group).then(function (success) {
+			return Notifications.sendPushForUserHasBeenInvitedToGroup(invitee, invitedBy, group);
+		})
+	});
+}
+
+/*
+ *	inviteNonUserToGroup
+ *	@param inviteeEmail A string of the email address of the non-user invitee we are creating a contract for
+ *	@param invitedBy A pointer to the _User who invited the invitee
+ *	@param group A pointer to a Group which the user has been invited to
+ *	
+ *	@return A Parse.Promise dependent on the contract being created, the mail being sent and the notification being sent
+ */
+exports.inviteNonUserToGroup = function inviteNonUserToGroup(inviteeEmail, invitedBy, group){
+	console.log("Inviting non user to group");
+	return Contracts.createContractWithNonUserInviteeEmailFromUserForGroup(inviteeEmail, invitedBy, group).then(function(theContract){
+		//If something isn't working, it might be because we need to wrap this line in a parse return
+		return Mail.sendInvitationEmailToNonUserFromUserForGroup(inviteeEmail, invitedBy, group);
+	});
+}

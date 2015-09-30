@@ -7,10 +7,22 @@
 
 var MessagesInterface = require('cloud/Interfaces/MessagesInterface.js');
 var Message = Parse.Object.extend("GroupContract");
+var Notifications = require('cloud/Interfaces/NotificationsInterface.js');
 
 // createNewMessage (author, group, text);
 // deleteMessage (author, messageId);
 
+
+Parse.Cloud.afterSave("Message", function(request) {
+	console.log("Saved new message");
+	if (request.object.existed() === false) {
+		console.log("Gonna post now");
+		// Brand new Message, so let's alert users of the group
+		var author = request.object.get("author");
+		var group = request.object.get("group");
+		Notifications.sendPushForUserPostedMessageToGroup(author, request.object, group);
+	}
+});
 
 /* 
  * Creates a new message written by the author::_User and accessible only to the group::Group

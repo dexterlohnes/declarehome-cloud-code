@@ -20,6 +20,8 @@ Parse.Cloud.define("getUserStatusForGroup", function(request, response) {
  * 	CreateRolesForNewGroup
  *
  *	@param newGroup This is the newly created group. This function should only be called on new groups
+ *	@param user A pointer to the user who created the new group
+ *	@param request The request which led to the creation of these roles. We use this to generate our hash for the hash string of the groups
  */
 exports.CreateRolesForNewGroup = function CreateRolesForNewGroup(newGroup, user, request) {
 	if(newGroup.isNew() === false){
@@ -78,7 +80,7 @@ exports.CreateRolesForNewGroup = function CreateRolesForNewGroup(newGroup, user,
  * @param group The Group object we want to add our user to
  * @param user The Parse.User object we want to add to the group.members relation
  *
- * @return A Parse.Promise object once the function is done
+ * @return A Parse.Promise object containing the user who has been updated once the function is done
  */ 
 exports.addUserToGroupAsMember = function addUserToGroupAsMember(user, group) {
 	// Parse.Cloud.useMasterKey();
@@ -114,6 +116,7 @@ exports.addUserToGroupAsMember = function addUserToGroupAsMember(user, group) {
 	});
 
 };
+
 /*
  * addUserToGroupsAdminsRelation
  * @param group The Group object we want to add our user to as an admin
@@ -138,8 +141,20 @@ exports.addUserToGroupAsAdmin = function addUserToGroupAsAdmin(user, group) {
 	});
 };
 
-
-
+/*
+ * getAllAdminsQuery
+ * @param group The Group object we want to fetch all admins of
+ *
+ * @return A Parse.Promise object once the function is done containing the fetched users relation of all admins of the group
+ */ 
+exports.getAllAdminsQuery = function(group) {
+	return group.fetch().then(function (theGroup) {
+		var adminsRole = group.get("adminsRole");
+		return adminsRole.fetch();
+	}).then(function (theRole) {
+		return Parse.Promise.as(theRole.getUsers().query());
+	});
+}
 
 /*
  * removeMemberFromGroup
@@ -167,8 +182,8 @@ exports.removeMemberFromGroup = function removeMemberFromGroup(user, group) {
 
 /*
  * removeAdminFromGroup
- * @param group The Group object we want to remove our user from
  * @param user The Parse.User object we want to remove from the group.admins relation
+ * @param group The Group object we want to remove our user from
  *
  * @return A Parse.Promise object once the function is done
  */ 

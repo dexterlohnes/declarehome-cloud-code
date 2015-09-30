@@ -1,6 +1,7 @@
 var userstatusForGroupImport = require('cloud/UserStatusForGroup.js');
 var GroupsInterface = require('cloud/Interfaces/GroupsInterface.js');
 var ContractsInterface = require('cloud/Interfaces/ContractsInterface.js');
+var NotificationsInterface = require('cloud/Interfaces/NotificationsInterface.js');
 
 
 Parse.Cloud.afterSave("Group", function(request) {
@@ -171,6 +172,7 @@ Parse.Cloud.beforeSave(Parse.Role, function(request, response) {
 });
 
 
+
 // TODO: Move this to beforeSave, save us an entire api call cycle
 Parse.Cloud.afterSave(Parse.User, function(request) {
 	if (request.object.existed() === false) {
@@ -184,9 +186,19 @@ Parse.Cloud.afterSave(Parse.User, function(request) {
 			request.user.setACL(acl);
 			request.user.save();
 		});
-		//We want to find all open contracts for this user and accept them 
+		//We want to find all open contracts for this user and accept them 	
+	}
+});
 
-		
+Parse.Cloud.afterSave("Message", function(request) {
+	console.log("Saved new message");
+	if (request.object.existed() === false) {
+		console.log("Gonna post now");
+		// Brand new Message, so let's alert users of the group
+		var author = request.object.get("author");
+		var group = request.object.get("group");
+		author.fetch();
+		NotificationsInterface.sendPushForUserPostedMessageToGroup(author, request.object, group);
 	}
 });
 

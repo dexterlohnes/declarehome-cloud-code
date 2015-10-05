@@ -191,13 +191,13 @@ Parse.Cloud.afterSave(Parse.User, function(request) {
 });
 
 Parse.Cloud.afterSave("Message", function(request) {
-	console.log("Saved new message");
+	console.log("Saved a message");
 	if (request.object.existed() === false) {
-		console.log("Gonna post now");
+		console.log("Gonna post notif now");
 		// Brand new Message, so let's alert users of the group
 		var author = request.object.get("author");
+		// TODO: Update this to get "groups" and then update everyone
 		var group = request.object.get("group");
-		author.fetch();
 		NotificationsInterface.sendPushForUserPostedMessageToGroup(author, request.object, group);
 	}
 });

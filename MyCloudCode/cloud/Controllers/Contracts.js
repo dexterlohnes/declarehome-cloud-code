@@ -73,6 +73,7 @@ exports.acceptMembershipToGroup = function acceptMembershipToGroup(invitee, cont
  *
  */
 exports.approveMembershipForGroup = function approveMembershipForGroup(admin, invitee, contract){
+	console.log("Approving membership");
 	console.log("Admin is: " + JSON.stringify(admin, null, 4));
 	console.log("Invitee is: " + JSON.stringify(invitee, null, 4));
 	console.log("Contract is: " + JSON.stringify(contract, null, 4));
@@ -80,15 +81,18 @@ exports.approveMembershipForGroup = function approveMembershipForGroup(admin, in
 
 	//Verify contract is for this user
 	if((usersMatch === true) === false){
+		console.error("Contract doesn't match user");
 		return Parse.Promise.error("This contract doesn't belong to this user");
 	}
 
 	//Verify the contract has "invitedBy" blank
 	if((contract.get("invitedBy") === undefined || contract.get("invitedBy") === null) === false){
+		console.error("Contract has already been signed by another admin");
 		return Parse.Promise.error("This contract is already signed by an admin");
 	}
 
 	if(contract.get("status") != STATUS_USER_REQUESTED_MEMBERSHIP){
+		console.error("This contract is not in a state for this invitee to accept membership. They either haven't been invited or they already have accepted it");
 		return Parse.Promise.error("This contract is not in a state for this invitee to accept membership. They either haven't been invited or they already have accepted it");
 	}
 
@@ -102,6 +106,7 @@ exports.approveMembershipForGroup = function approveMembershipForGroup(admin, in
 
 	return contract.save().then(function(cont){
 		//Add user to the group
+		console.log("Contract saved: Now we are going to add the user as a member to the group");
 		return GroupsInterface.addUserToGroupAsMember(invitee, cont.get("group"));
 	});
 };

@@ -5,7 +5,6 @@
  ***********************************************************************************************
  ***********************************************************************************************/
 
-var MessagesInterface = require('cloud/Interfaces/MessagesInterface.js');
 var Message = Parse.Object.extend("GroupContract");
 var Notifications = require('cloud/Interfaces/NotificationsInterface.js');
 

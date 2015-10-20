@@ -9,6 +9,7 @@ var Notifications = require('cloud/Controllers/Notifications.js');
  *	@return A Parse.Promise which is bound by the Push completing
  */
 exports.sendPushForUserPostedMessageToGroup = function (user, message, group) {
+	// TODO: Make sure we don't have to fetch user and fetch groups here
 	return user.fetch().then(function (theUser) {
 		user = theUser;
 		return group.fetch().then(function (theGroup) {	
@@ -29,6 +30,50 @@ exports.sendPushForUserPostedMessageToGroup = function (user, message, group) {
 			return Notifications.pushNotifToQuery(alertMessage, pushQuery, title);
 		});
 	});
+};
+
+/*
+ *	sendPushForUserPostedAlertToGroups
+ *	@param user A pointer to the _User who posted a new message
+ *	@param message A pointer to the Message which has been posted
+ *	@param groups An array of Groups which we are sending notifications to
+ *	
+ *	@return A Parse.Promise which is bound by the Push completing
+ */
+exports.sendPushForUserPostedAlertToGroups = function (user, message, groups) {
+	// TODO: Make sure we don't have to fetch user and fetch groups here
+	// return user.fetch().then(function (theUser) {
+
+	var promises = [];
+
+	for (var i = 0; i < groups.length; i++) {
+		var group = groups[i];
+		promises.push(sendPushForUserPostedAlertToGroup(user, message, group));
+    }
+
+    return Parse.Promise.when(promises);
+
+	// });
+};
+
+
+function sendPushForUserPostedAlertToGroup (user, message, group) {
+	// Broadcast to the alert channel
+	var channel = Notifications.getAlertChannelForGroup(group);
+	var pushQuery = new Parse.Query(Parse.Installation);
+	pushQuery.equalTo('channels', channel); // Set our channel
+
+	// Find all users who are NOT the author
+	var userQuery = new Parse.Query(Parse.User);
+	userQuery.notEqualTo("objectId", user.id);
+	
+	// Set our push query to only find Installations where the 'user' is not equal to our author User
+	pushQuery.matchesQuery('user', userQuery);
+
+	var alertMessage = message.get("body");
+	// var title = user.get("displayName") + " - " + theGroup.get("name");
+	var title = "ALERT!"
+	return Notifications.pushNotifToQuery(alertMessage, pushQuery, title);
 };
 
 /* 	UNTESTED UNIMPLEMENTED * 	UNTESTED UNIMPLEMENTED * 	UNTESTED UNIMPLEMENTED * 	UNTESTED UNIMPLEMENTED
@@ -53,11 +98,11 @@ exports.sendPushForUserCreatedNewEventForGroup = function (user, eventTitle, gro
  *	
  *	@return A Parse.Promise which is bound by the Push completing
  */
-exports.sendPushForAlertToGroup = function (user, alert, group) {
-	var channel = Notifications.getAlertChannelForGroup(group);
-	var alertMessage = user.get("displayName") + ": " + alert;
-	Notifications.pushNotifToChannel(alertMessage, channel);
-};
+// exports.sendPushForAlertToGroup = function (user, alert, group) {
+// 	var channel = Notifications.getAlertChannelForGroup(group);
+// 	var alertMessage = user.get("displayName") + ": " + alert;
+// 	Notifications.pushNotifToChannel(alertMessage, channel);
+// };
 
 /*
  *	sendPushForUsersInvitationAcceptedForGroup

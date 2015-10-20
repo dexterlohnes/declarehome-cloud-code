@@ -16,13 +16,14 @@ var Notifications = require('cloud/Interfaces/NotificationsInterface.js');
  * @return Parse.Promise once the message has been posted 
  */
 
-function createNewMessage (author, group, text) {
+function createNewMessage (author, groups, text) {
 	// Create the new message with 'text'
 	var message = new Message();
 	//Populate
 	message.set("body", text);
 	message.set("author", author);
-	message.set("group", group);
+	
+	message.set("groups", groups);
 
 	// ACL PERMISSIONS
 	var ACL = new Parse.ACL(user);
@@ -31,8 +32,11 @@ function createNewMessage (author, group, text) {
 	// ONLY the author can edit
 	ACL.setWriteAccess(author.id, true);
 	// ONLY the group can read
-	ACL.setReadAccess(group.get("membersRole"));
-
+	
+	for(int i = 0; i < groups.length; i++) {
+		ACL.setReadAccess(groups[i].get("membersRole"));	
+	}
+	
 	message.setACL(ACL);
 	// return
 	return message.save();

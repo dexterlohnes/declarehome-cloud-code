@@ -81,13 +81,13 @@ Parse.Cloud.define("acceptMembershipToGroup", function(request, response) {
  */
 Parse.Cloud.define("approveMembershipForGroup", function(request, response) {
 
+	console.log("Going to approve membership for group with id: " + request.params.groupId);
 	var Group = Parse.Object.extend("Group");
     var groupPlaceholder = new Group();
     groupPlaceholder.id = request.params.groupId;
 
     var inviteePlaceholder = new Parse.User();
     inviteePlaceholder.id = request.params.inviteeId;
-
 
     var requestedMembershipQuery = new Parse.Query("GroupContract");
 	// Limit the query to having a pointer to invitee
@@ -99,8 +99,10 @@ Parse.Cloud.define("approveMembershipForGroup", function(request, response) {
     // Limit the status to "UserRequested" 
     requestedMembershipQuery.equalTo("status", STATUS_USER_REQUESTED_MEMBERSHIP);
 
+    console.log("Going to find the contract now");
     requestedMembershipQuery.first().then(function (theContract) {
     	if(theContract !== null && theContract !== undefined) {
+    		console.log("Found the contract");
 		    Contracts.approveMembershipForGroup(request.user, inviteePlaceholder, theContract).then(function(success) {
 		    	Notifications.sendPushForUsersInvitationAcceptedForGroup(inviteePlaceholder, groupPlaceholder).then(function (success) {
 		    		response.success();
@@ -109,6 +111,7 @@ Parse.Cloud.define("approveMembershipForGroup", function(request, response) {
 		    	});
 				
 			}, function(error) {
+				console.log("Error while approving membership");
 				console.error(error);
 				response.error();
 			});

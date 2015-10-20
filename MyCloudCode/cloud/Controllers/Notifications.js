@@ -68,7 +68,7 @@ exports.pushNotifToQuery = function (notifMessage, query, androidTitle) {
 	
 	var promise = new Parse.Promise();
 
-	console.log("Going to send push to \nquery: " + JSON.stringify(query, null, 4) + "\nWith message: " + notifMessage);
+	console.log("Going to send push to \nquery: " + JSON.stringify(query, null, 4) + "\nWith message: " + notifMessage + "and title: " + androidTitle);
 
 	Parse.Push.send({
 		where: query,

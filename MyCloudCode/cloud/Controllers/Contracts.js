@@ -6,6 +6,8 @@
  ***********************************************************************************************/
 
 var GroupsInterface = require('cloud/Interfaces/GroupsInterface.js');
+var Mail = require('cloud/Interfaces/MailInterface.js');
+var Notifications = require('cloud/Interfaces/NotificationsInterface.js');
 
 
  var STATUS_EXISTING_USER_INVITED = "UserInvited";
@@ -212,7 +214,7 @@ exports.createContractWithRequsterForGroup = function createContractWithRequster
  *	@return A Parse.Promise dependent on the contract being created, the mail being sent and the notification being sent
  */
 exports.inviteUserToGroup = function inviteUserToGroup(invitee, invitedBy, group){
-	return Contracts.createContractWithInviteeFromUserForGroup(invitee, invitedBy, group).then(function(theContract) {
+	return exports.createContractWithInviteeFromUserForGroup(invitee, invitedBy, group).then(function(theContract) {
 		//If something isn't working, it might be because we need to wrap this line in a parse return
 		return Mail.sendInvitationEmailToUserFromUserForGroup(invitee, invitedBy, group).then(function (success) {
 			return Notifications.sendPushForUserHasBeenInvitedToGroup(invitee, invitedBy, group);
@@ -230,7 +232,7 @@ exports.inviteUserToGroup = function inviteUserToGroup(invitee, invitedBy, group
  */
 exports.inviteNonUserToGroup = function inviteNonUserToGroup(inviteeEmail, invitedBy, group){
 	console.log("Inviting non user to group");
-	return Contracts.createContractWithNonUserInviteeEmailFromUserForGroup(inviteeEmail, invitedBy, group).then(function(theContract){
+	return exports.createContractWithNonUserInviteeEmailFromUserForGroup(inviteeEmail, invitedBy, group).then(function(theContract){
 		//If something isn't working, it might be because we need to wrap this line in a parse return
 		return Mail.sendInvitationEmailToNonUserFromUserForGroup(inviteeEmail, invitedBy, group);
 	});

@@ -10,6 +10,7 @@
  var STATUS_NON_USER_INVITED = "NonUserInvited";
  var STATUS_USER_REQUESTED_MEMBERSHIP = "UserRequested";
  var STATUS_CONTRACT_COMPLETED = "Signed";
+ var Settings = require('cloud/Settings.js');
 
 /*
  *	@return void Calls response.success once user status has been established
@@ -17,14 +18,14 @@
 exports.userStatusForGroup = function userStatusForGroup(request, response) {
 	checkUserIsAdmin(request,response)
 	.then(function(wasAdmin){
-		console.log("Checked if the user was an admin");
-		if(wasAdmin) console.log("They were"); else console.log("They weren't");
+		if(Settings.LogAll === true) console.log("Checked if the user was an admin");
+		if(wasAdmin) if(Settings.LogAll === true) console.log("They were"); else if(Settings.LogAll === true) console.log("They weren't");
 		if(wasAdmin === true) response.success(1); 
 		else if(wasAdmin === false){
-			console.log("Checking if user is member");
+			if(Settings.LogAll === true) console.log("Checking if user is member");
 			checkUserIsMember(request, response).then(function(wasMember){
-				console.log("Checked if the user was a member");
-				if(wasMember) console.log("They were"); else console.log("They weren't");
+				if(Settings.LogAll === true) console.log("Checked if the user was a member");
+				if(wasMember) if(Settings.LogAll === true) console.log("They were"); else if(Settings.LogAll === true) console.log("They weren't");
 				if(wasMember === true) response.success(2);
 				else {
 					//wasMember === false
@@ -50,9 +51,9 @@ exports.userStatusForGroup = function userStatusForGroup(request, response) {
  */
  function checkUserIsAdmin(request, response, funcsArray) {
 
-	console.log("In checkUserIsAdmin");
-	console.log("Request is: " + JSON.stringify(request, null, 4));
-	console.log("User is: " + JSON.stringify(request.user, null, 4));
+	if(Settings.LogAll === true) console.log("In checkUserIsAdmin");
+	if(Settings.LogAll === true) console.log("Request is: " + JSON.stringify(request, null, 4));
+	if(Settings.LogAll === true) console.log("User is: " + JSON.stringify(request.user, null, 4));
 
 	//Get a query limited to the groups in the user's "adminOf" relation
 	var query = request.user.relation("adminOf").query();
@@ -84,7 +85,7 @@ exports.userStatusForGroup = function userStatusForGroup(request, response) {
  */
  function checkUserIsMember(request, response, funcsArray) {
 
-	console.log("In checkUserIsMember");
+	if(Settings.LogAll === true) console.log("In checkUserIsMember");
 
 	//Get a query limited to the groups in the user's "adminOf" relation
 	var query = request.user.relation("memberOf").query();
@@ -115,7 +116,7 @@ exports.userStatusForGroup = function userStatusForGroup(request, response) {
  */
  function checkUserInvitationStatus(request, response) {
 
-	console.log("In checkUserWasInvitedByAdmin");
+	if(Settings.LogAll === true) console.log("In checkUserWasInvitedByAdmin");
 
 	// Get a query for GroupContract objects
 	var requestedMembershipQuery = new Parse.Query("GroupContract");
@@ -138,8 +139,6 @@ exports.userStatusForGroup = function userStatusForGroup(request, response) {
 	givenInvitationQuery.equalTo("invitee", request.user);
 
 	// Limited the group pointer to the group contained in our params
-	var Group = Parse.Object.extend("Group");
-    var groupPlaceholder = new Group();
     groupPlaceholder.id = request.params.group;
     givenInvitationQuery.equalTo("group", groupPlaceholder);
 
@@ -158,7 +157,7 @@ exports.userStatusForGroup = function userStatusForGroup(request, response) {
 		}else if (theContract.get("status") == STATUS_USER_REQUESTED_MEMBERSHIP) {
 			return Parse.Promise.as(4);
 		}else {
-			console.log("No idea what happened here xxx");
+			if(Settings.LogAll === true) console.log("No idea what happened here xxx");
 			return Parse.Promise.as(5);
 		}
 	}, function(error){
@@ -188,7 +187,7 @@ exports.CreateRoleForGroup = function CreateRoleForGroup(group, roleType, hashId
 	// We don't need to query to find that out
 
 	console.log("Adding user to group " + group.id + " for roleType " + roleType);
-	console.log("Group Hash ID is: " + group.get("groupHashId"));
+	if(Settings.LogAll === true) console.log("Group Hash ID is: " + group.get("groupHashId"));
 
 	if(typeof hashId === 'undefined'){
    		hashId = group.get("groupHashId");
@@ -196,20 +195,23 @@ exports.CreateRoleForGroup = function CreateRoleForGroup(group, roleType, hashId
 
  	var roleName = hashId + "_" + roleType;
 
- 	console.log("Full roleName is: " + roleName);
+ 	if(Settings.LogAll === true) console.log("Full roleName is: " + roleName);
 
-	console.log("The role didn't exist yet. So we're creating it");
+	if(Settings.LogAll === true) console.log("The role didn't exist yet. So we're creating it");
 	var roleACL = new Parse.ACL();
 	roleACL.setPublicReadAccess(true);
 	var theRole = new Parse.Role(roleName, roleACL);
+	console.log("Created the role in memory");
 
-	if(superRole)
+	if(superRole){
+		console.log("Added super role to role");
 		theRole.getRoles().add(superRole);
+	}
 
 	console.log("We are about to save our NEW GROUP role");
 	return theRole.save().then(function(savedRole){
 		console.log("We did it");
-		console.log(JSON.stringify(savedRole, null, 4));
+		if(Settings.LogAll === true) console.log(JSON.stringify(savedRole, null, 4));
 		return Parse.Promise.as(savedRole);
 	});
 };
@@ -228,7 +230,7 @@ exports.CreateRoleForGroup = function CreateRoleForGroup(group, roleType, hashId
  */
 function RemoveUserFromGroupRole(group, user, roleName) {
 
-	console.log("Removing user from group " + group.id + " for rolename " + roleName);
+	if(Settings.LogAll === true) console.log("Removing user from group " + group.id + " for rolename " + roleName);
 
 	var queryRole = new Parse.Query(Parse.Role);
 	queryRole.equalTo("name", roleName);
@@ -239,7 +241,7 @@ function RemoveUserFromGroupRole(group, user, roleName) {
 			if (!theRole) {
 				return Parse.Promise.error("Tried removing user from role but it doensn't exist");
 			} else {
-				console.log("Removing from role");
+				if(Settings.LogAll === true) console.log("Removing from role");
 				theRole.getUsers().remove(user);
 				return theRole.save();
 			}
@@ -269,8 +271,8 @@ exports.AddUserToGroupRole = function AddUserToGroupRole(group, user, roleType, 
 	// If the group is brand new, then the role doesn't exist yet. 
 	// We don't need to query to find that out
 
-	console.log("Adding user to group " + group.id + " for roleType " + roleType);
-	console.log("Group Hash ID is: " + group.get("groupHashId"));
+	if(Settings.LogAll === true) console.log("Adding user to group " + group.id + " for roleType " + roleType);
+	if(Settings.LogAll === true) console.log("Group Hash ID is: " + group.get("groupHashId"));
 
 	if(typeof hashId === 'undefined'){
    		hashId = group.get("groupHashId");
@@ -278,14 +280,14 @@ exports.AddUserToGroupRole = function AddUserToGroupRole(group, user, roleType, 
 
  	var roleName = hashId + "_" + roleType;
 
- 	console.log("Full roleName is: " + roleName);
+ 	if(Settings.LogAll === true) console.log("Full roleName is: " + roleName);
 
 	var queryRole = new Parse.Query(Parse.Role);
 	queryRole.equalTo("name", roleName);
 
 	return queryRole.first().then(function(theRole){
 		if (!theRole) {
-				console.log("The role didn't exist yet. So we're creating it");
+				if(Settings.LogAll === true) console.log("The role didn't exist yet. So we're creating it");
 				var roleACL = new Parse.ACL();
 				roleACL.setPublicReadAccess(true);
 				theRole = new Parse.Role(roleName, roleACL);

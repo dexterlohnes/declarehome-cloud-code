@@ -7,6 +7,7 @@
 
 var Message = Parse.Object.extend("GroupContract");
 var Notifications = require('cloud/Interfaces/NotificationsInterface.js');
+var Settings = require('cloud/Settings.js');
 
 /* 
  * Creates a new message written by the author::_User and accessible only to the group::Group
@@ -32,7 +33,7 @@ function createNewMessage (author, groups, text) {
 	ACL.setWriteAccess(author.id, true);
 	// ONLY the group can read
 	
-	for(int i = 0; i < groups.length; i++) {
+	for(var i = 0; i < groups.length; i++) {
 		ACL.setReadAccess(groups[i].get("membersRole"));	
 	}
 	

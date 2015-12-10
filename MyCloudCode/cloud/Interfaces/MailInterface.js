@@ -1,5 +1,6 @@
 var Mail = require('cloud/Controllers/Mail.js');
 var Groups = require('cloud/Interfaces/GroupsInterface.js');
+var Settings = require('cloud/Settings.js');
 
 /*
  *	sendInvitationEmailToUserFromUserForGroup
@@ -10,7 +11,7 @@ var Groups = require('cloud/Interfaces/GroupsInterface.js');
  *	@return A Parse.Promise once the send completes
  */
 exports.sendInvitationEmailToUserFromUserForGroup = function sendInvitationEmailToUserFromUserForGroup(invitee, invitedBy, group){
-	console.log("EMAIL INVITATION TO USER WILL HAPPEN HERE");
+	if(Settings.LogAll === true) console.log("EMAIL INVITATION TO USER WILL HAPPEN HERE");
 
 	var invitedByDisplayName = invitedBy.get("displayName");
 	var groupName = group.get("name");
@@ -34,7 +35,7 @@ exports.sendInvitationEmailToUserFromUserForGroup = function sendInvitationEmail
  *	@return A Parse.Promise once the send completes
  */
 exports.sendInvitationEmailToNonUserFromUserForGroup = function sendInvitationEmailToNonUserFromUserForGroup(inviteeEmail, invitedBy, group){
-	console.log("EMAIL INVITATION TO NON USERWILL HAPPEN HERE");
+	if(Settings.LogAll === true) console.log("EMAIL INVITATION TO NON USERWILL HAPPEN HERE");
 
 	var invitedByDisplayName = invitedBy.get("displayName");
 	var groupName = group.get("name");
@@ -60,7 +61,7 @@ exports.sendInvitationEmailToNonUserFromUserForGroup = function sendInvitationEm
  *	@return A Parse.Promise once ALL sends are complete
  */
 sendMembershipRequestEmailToAdminOfGroup = function (requester, admin, group) {
-	console.log("MEMBERSHIP REQUEST EMAIL IS HAPPENING HERE");
+	if(Settings.LogAll === true) console.log("MEMBERSHIP REQUEST EMAIL IS HAPPENING HERE");
 	var requesterDisplayName = requester.get("displayName");
 	var groupName = group.get("name");
 	var adminDisplayName = admin.get("displayName");
@@ -83,14 +84,14 @@ sendMembershipRequestEmailToAdminOfGroup = function (requester, admin, group) {
  *	@return A Parse.Promise once ALL sends are complete
  */
 exports.sendMembershipRequestEmailToAdminsOfGroup = function sendMembershipRequestEmailToAdminsOfGroup(requester, group){
-	console.log("MEMBERSHIP REQUEST EMAIL WILL HAPPEN HERE");
+	if(Settings.LogAll === true) console.log("MEMBERSHIP REQUEST EMAIL WILL HAPPEN HERE");
 
-	console.log("Group: \n" + JSON.stringify(group, null, 4));
+	if(Settings.LogAll === true) console.log("Group: \n" + JSON.stringify(group, null, 4));
 
 	return Groups.getAllAdminsQuery(group).then(function (query) {
 		return query.find();
 	}).then (function (allAdmins) {
-		console.log("Found " + allAdmins.length + " admins to send email to");
+		if(Settings.LogAll === true) console.log("Found " + allAdmins.length + " admins to send email to");
 
 		var promises = [];
 

@@ -1,4 +1,4 @@
-/*
+var Settings = require('cloud/Settings.js');/*
  *	getUserWithEmail
  *	@param email The email of the user we are finding.
  *	

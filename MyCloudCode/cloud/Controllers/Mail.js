@@ -31,9 +31,9 @@ exports.Mailgun = Mailgun;
  * Sends an email to a user
  */
 exports.sendEmailToUser = function (userEmails, subject, text) {
-	console.log("Sending mail to " + userEmails);
-	console.log("Subject: \n" + subject);
-	console.log("Text: \n" + text);
+	if(Settings.LogAll === true) console.log("Sending mail to " + userEmails);
+	if(Settings.LogAll === true) console.log("Subject: \n" + subject);
+	if(Settings.LogAll === true) console.log("Text: \n" + text);
 
 	var promise = new Parse.Promise();
 
@@ -44,7 +44,7 @@ exports.sendEmailToUser = function (userEmails, subject, text) {
 	  	text: text
 	}, {
 	  success: function(httpResponse) {
-	    console.log(httpResponse);
+	    if(Settings.LogAll === true) console.log(httpResponse);
 	    // httpResponse.success("Email sent!");
 	    promise.resolve();
 	  },
@@ -56,4 +56,4 @@ exports.sendEmailToUser = function (userEmails, subject, text) {
 	});
 
 	return promise;
-}
+};

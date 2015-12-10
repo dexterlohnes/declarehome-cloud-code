@@ -6,6 +6,9 @@
  ***********************************************************************************************/
 
 var GroupsInterface = require('cloud/Interfaces/GroupsInterface.js');
+var Mail = require('cloud/Interfaces/MailInterface.js');
+var Notifications = require('cloud/Interfaces/NotificationsInterface.js');
+var Settings = require('cloud/Settings.js');
 
 
  var STATUS_EXISTING_USER_INVITED = "UserInvited";
@@ -31,8 +34,8 @@ var GroupsInterface = require('cloud/Interfaces/GroupsInterface.js');
  */
 exports.acceptMembershipToGroup = function acceptMembershipToGroup(invitee, contract){
 	var emailsMatch = (invitee.get("email") === contract.get("inviteeEmail"));
-	console.log("Invitee is: " + JSON.stringify(invitee, null, 4));
-	console.log("Contract is: " + JSON.stringify(contract, null, 4));
+	if(Settings.LogAll === true) console.log("Invitee is: " + JSON.stringify(invitee, null, 4));
+	if(Settings.LogAll === true) console.log("Contract is: " + JSON.stringify(contract, null, 4));
 	var usersMatch = contract.get("invitee") === undefined ? false : (invitee.id === contract.get("invitee").id);
 
 	//Verify contract is for this user
@@ -73,10 +76,10 @@ exports.acceptMembershipToGroup = function acceptMembershipToGroup(invitee, cont
  *
  */
 exports.approveMembershipForGroup = function approveMembershipForGroup(admin, invitee, contract){
-	console.log("Approving membership");
-	console.log("Admin is: " + JSON.stringify(admin, null, 4));
-	console.log("Invitee is: " + JSON.stringify(invitee, null, 4));
-	console.log("Contract is: " + JSON.stringify(contract, null, 4));
+	if(Settings.LogAll === true) console.log("Approving membership");
+	if(Settings.LogAll === true) console.log("Admin is: " + JSON.stringify(admin, null, 4));
+	if(Settings.LogAll === true) console.log("Invitee is: " + JSON.stringify(invitee, null, 4));
+	if(Settings.LogAll === true) console.log("Contract is: " + JSON.stringify(contract, null, 4));
 	var usersMatch = contract.get("invitee") === undefined ? false : (invitee.id === contract.get("invitee").id);
 
 	//Verify contract is for this user
@@ -106,7 +109,7 @@ exports.approveMembershipForGroup = function approveMembershipForGroup(admin, in
 
 	return contract.save().then(function(cont){
 		//Add user to the group
-		console.log("Contract saved: Now we are going to add the user as a member to the group");
+		if(Settings.LogAll === true) console.log("Contract saved: Now we are going to add the user as a member to the group");
 		return GroupsInterface.addUserToGroupAsMember(invitee, cont.get("group"));
 	});
 };
@@ -160,7 +163,7 @@ exports.createContractWithInviteeFromUserForGroup = function createContractWithI
  *	@return A Parse.Promise once the save completes
  */
 exports.createContractWithNonUserInviteeEmailFromUserForGroup = function createContractWithNonUserInviteeEmailFromUserForGroup(inviteeEmail, invitedBy, group){
-	console.log("Creating new contract object");
+	if(Settings.LogAll === true) console.log("Creating new contract object");
 	//Create the contract object
 	var Contract = Parse.Object.extend("GroupContract");
 	var contract = new Contract();
@@ -186,7 +189,7 @@ exports.createContractWithNonUserInviteeEmailFromUserForGroup = function createC
  */
 exports.createContractWithRequsterForGroup = function createContractWithRequsterForGroup(requester, group){
 
-	console.log("Creating the contract");
+	if(Settings.LogAll === true) console.log("Creating the contract");
 
 	//Create the contract
 	var Contract = Parse.Object.extend("GroupContract");
@@ -198,7 +201,7 @@ exports.createContractWithRequsterForGroup = function createContractWithRequster
 	contract.set("group", group);
 	contract.set("status", STATUS_USER_REQUESTED_MEMBERSHIP);
 
-	console.log("Saving the contract now");
+	if(Settings.LogAll === true) console.log("Saving the contract now");
 	//Save it
 	return contract.save();
 };
@@ -212,13 +215,13 @@ exports.createContractWithRequsterForGroup = function createContractWithRequster
  *	@return A Parse.Promise dependent on the contract being created, the mail being sent and the notification being sent
  */
 exports.inviteUserToGroup = function inviteUserToGroup(invitee, invitedBy, group){
-	return Contracts.createContractWithInviteeFromUserForGroup(invitee, invitedBy, group).then(function(theContract) {
+	return exports.createContractWithInviteeFromUserForGroup(invitee, invitedBy, group).then(function(theContract) {
 		//If something isn't working, it might be because we need to wrap this line in a parse return
 		return Mail.sendInvitationEmailToUserFromUserForGroup(invitee, invitedBy, group).then(function (success) {
 			return Notifications.sendPushForUserHasBeenInvitedToGroup(invitee, invitedBy, group);
-		})
+		});
 	});
-}
+};
 
 /*
  *	inviteNonUserToGroup
@@ -229,9 +232,9 @@ exports.inviteUserToGroup = function inviteUserToGroup(invitee, invitedBy, group
  *	@return A Parse.Promise dependent on the contract being created, the mail being sent and the notification being sent
  */
 exports.inviteNonUserToGroup = function inviteNonUserToGroup(inviteeEmail, invitedBy, group){
-	console.log("Inviting non user to group");
-	return Contracts.createContractWithNonUserInviteeEmailFromUserForGroup(inviteeEmail, invitedBy, group).then(function(theContract){
+	if(Settings.LogAll === true) console.log("Inviting non user to group");
+	return exports.createContractWithNonUserInviteeEmailFromUserForGroup(inviteeEmail, invitedBy, group).then(function(theContract){
 		//If something isn't working, it might be because we need to wrap this line in a parse return
 		return Mail.sendInvitationEmailToNonUserFromUserForGroup(inviteeEmail, invitedBy, group);
 	});
-}
+};

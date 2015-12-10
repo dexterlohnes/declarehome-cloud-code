@@ -1,6 +1,6 @@
 var StringHash = require('cloud/Utilities/StringHash.js');
 var Groups = require('cloud/Controllers/Groups.js');
-
+var Settings = require('cloud/Settings.js');
 
 /*
  * This will eventually call response.success(x) with x === one of 5 responses depending on the user's status within the group
@@ -12,7 +12,7 @@ var Groups = require('cloud/Controllers/Groups.js');
  * response.success(5) - If User has no outstanding association (no request to join yet made, no invitation)
  */
 Parse.Cloud.define("getUserStatusForGroup", function(request, response) {
-	console.log("In getUserStatusForGroup");
+	if(Settings.LogAll === true) console.log("In getUserStatusForGroup");
 	Groups.userStatusForGroup(request, response);
 });
 
@@ -24,7 +24,9 @@ Parse.Cloud.define("getUserStatusForGroup", function(request, response) {
  *	@param request The request which led to the creation of these roles. We use this to generate our hash for the hash string of the groups
  */
 exports.CreateRolesForNewGroup = function CreateRolesForNewGroup(newGroup, user, request) {
+	console.log("2. BEGIN CREATE ROLES FOR NEW GROUP");
 	if(newGroup.isNew() === false){
+		console.error("Group already existed!!!! MAYBE WE SHOULDN'T BE GETTING THIS");
 		return Parse.Promise.error("Trying to create roles for a pre-existing group");
 	}
 	var that = this;
@@ -46,15 +48,18 @@ exports.CreateRolesForNewGroup = function CreateRolesForNewGroup(newGroup, user,
 	// return Groups.AddUserToGroupRole(newGroup, user, adminRoleType, theHash).then(
 		return Groups.CreateRoleForGroup(newGroup, adminRoleType, theHash).then(
 		function(adminRole) {
+			console.log("Back in Groups.CreateRoleForGroup: Created admin role");
 			//We have added our user to the admin group, so move on
 			that.adminRole = adminRole;
 
 				return Groups.CreateRoleForGroup(newGroup, memberRoleType, theHash, that.adminRole).then(
 				function(memberRole) {
 
+					console.log("Back in Groups.CreateRoleForGroup: Created member role");
+
 					//We have added our user to the member group, so move on
-					console.log(JSON.stringify(memberRole, null, 4));
-					console.log("Created member group: " + memberRoleName);
+					if(Settings.LogAll === true) console.log(JSON.stringify(memberRole, null, 4));
+					if(Settings.LogAll === true) console.log("Created member group: " + memberRoleName);
 
 
 					var groupACL = new Parse.ACL();
@@ -67,7 +72,7 @@ exports.CreateRolesForNewGroup = function CreateRolesForNewGroup(newGroup, user,
 					
 					newGroup.set("adminsRole", that.adminRole);
 					newGroup.set("membersRole", memberRole);
-					console.log("Created roles for the new group");
+					if(Settings.LogAll === true) console.log("Created roles for the new group");
 					return Parse.Promise.as(theHash);
 
 				});
@@ -84,25 +89,25 @@ exports.CreateRolesForNewGroup = function CreateRolesForNewGroup(newGroup, user,
  */ 
 exports.addUserToGroupAsMember = function addUserToGroupAsMember(user, group) {
 	// Parse.Cloud.useMasterKey();
-	console.log("In addUserToGroupAsMember");
+	if(Settings.LogAll === true) console.log("In addUserToGroupAsMember");
 	return group.fetch().then(function(theGroup) {
-		console.log("Fetched the group");
+		if(Settings.LogAll === true) console.log("Fetched the group");
 		//1 Get a handle on the group's members role
 		var membersRole = theGroup.get("membersRole");
 		return membersRole.fetch().then(function(theRole) {
-			console.log("Fetched the members role");
-			console.log("The members role: " + JSON.stringify(theRole, null, 4));
+			if(Settings.LogAll === true) console.log("Fetched the members role");
+			if(Settings.LogAll === true) console.log("The members role: " + JSON.stringify(theRole, null, 4));
 			var membersRel = theRole.getUsers();
 			//2 Add our user to the group's members relation
 			membersRel.add(user);
-			console.log("Members relation: " + JSON.stringify(membersRel, null, 4));
+			if(Settings.LogAll === true) console.log("Members relation: " + JSON.stringify(membersRel, null, 4));
 			return theRole.save(null, {useMasterKey:true}).then(function(theRoleAgain) {
-				console.log("Saved our members role");
+				if(Settings.LogAll === true) console.log("Saved our members role");
 				//3 then Add our group to the user's memberOf relation
 				var memberOf = user.relation("memberOf");
-				console.log("The group: " + JSON.stringify(theGroup, null, 4));
+				if(Settings.LogAll === true) console.log("The group: " + JSON.stringify(theGroup, null, 4));
 				memberOf.add(theGroup);
-				console.log("The relation after adding group, before save: " + JSON.stringify(memberOf, null, 4));
+				if(Settings.LogAll === true) console.log("The relation after adding group, before save: " + JSON.stringify(memberOf, null, 4));
 
 				//4 then return a promise containing the memberOfRelation
 				return user.save(null, {useMasterKey : true	});
@@ -154,7 +159,7 @@ exports.getAllAdminsQuery = function(group) {
 	}).then(function (theRole) {
 		return Parse.Promise.as(theRole.getUsers().query());
 	});
-}
+};
 
 /*
  * removeMemberFromGroup

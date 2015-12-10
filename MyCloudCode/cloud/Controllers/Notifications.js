@@ -4,7 +4,7 @@
  * CONTROLLERS IN THIS PATTERN SHOULD ONLY BE GETTING CALLED BY INTERFACES, NOT OTHER CONTROLLERS 
  ***********************************************************************************************
  ***********************************************************************************************/
-
+var Settings = require('cloud/Settings.js');
 var PREFIX_NEW_MESSAGE = "NewMessage";
 var PREFIX_NEW_EVENT = "NewEvent";
 var PREFIX_ALERT = "Alert";
@@ -28,7 +28,7 @@ exports.pushNotifToChannel = function (notifMessage, channel, androidTitle) {
 	
 	var promise = new Parse.Promise();
 
-	console.log("Going to send push to \nchannel: " + channel + "\nWith message: " + notifMessage);
+	if(Settings.LogAll === true) console.log("Going to send push to \nchannel: " + channel + "\nWith message: " + notifMessage);
 
 	Parse.Push.send({
 		channels: [channel],
@@ -39,14 +39,14 @@ exports.pushNotifToChannel = function (notifMessage, channel, androidTitle) {
 	}, {
 		success: function() {
 			// Push was successful
-			console.log("Push successfully sent");
-			console.log("Payload:\n" + notifMessage + "Channel:\n" + channel);
+			if(Settings.LogAll === true) console.log("Push successfully sent");
+			if(Settings.LogAll === true) console.log("Payload:\n" + notifMessage + "Channel:\n" + channel);
 			promise.resolve();
 		},
 		error: function(error) {
 			// Handle error
-			console.log("Push failed");
-			console.log("Payload:\n" + notifMessage + "Channel:\n" + channel);
+			if(Settings.LogAll === true) console.log("Push failed");
+			if(Settings.LogAll === true) console.log("Payload:\n" + notifMessage + "Channel:\n" + channel);
 			promise.reject();
 		}
 	});
@@ -68,7 +68,7 @@ exports.pushNotifToQuery = function (notifMessage, query, androidTitle) {
 	
 	var promise = new Parse.Promise();
 
-	console.log("Going to send push to \nquery: " + JSON.stringify(query, null, 4) + "\nWith message: " + notifMessage + "and title: " + androidTitle);
+	if(Settings.LogAll === true) console.log("Going to send push to \nquery: " + JSON.stringify(query, null, 4) + "\nWith message: " + notifMessage + "and title: " + androidTitle);
 
 	Parse.Push.send({
 		where: query,
@@ -79,14 +79,14 @@ exports.pushNotifToQuery = function (notifMessage, query, androidTitle) {
 	}, {
 		success: function() {
 			// Push was successful
-			console.log("Push successfully sent");
-			console.log("Payload:\n" + notifMessage + "Query:\n" + JSON.stringify(query, null, 4));
+			if(Settings.LogAll === true) console.log("Push successfully sent");
+			if(Settings.LogAll === true) console.log("Payload:\n" + notifMessage + "Query:\n" + JSON.stringify(query, null, 4));
 			promise.resolve();
 		},
 		error: function(error) {
 			// Handle error
-			console.log("Push failed");
-			console.log("Payload:\n" + notifMessage + "Query:\n" + JSON.stringify(query, null, 4));
+			if(Settings.LogAll === true) console.log("Push failed");
+			if(Settings.LogAll === true) console.log("Payload:\n" + notifMessage + "Query:\n" + JSON.stringify(query, null, 4));
 			promise.reject();
 		}
 	});
@@ -114,4 +114,4 @@ exports.getNewMembershipRequestedChannelForGroup = function (group) {
 
 exports.getInvitedToGroupChannelForUser = function (user) {
 	return PREFIX_INVITED_TO_GROUP + "_" + user.id;
-}
+};

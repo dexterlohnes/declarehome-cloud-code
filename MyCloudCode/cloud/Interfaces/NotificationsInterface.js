@@ -1,4 +1,5 @@
 var Notifications = require('cloud/Controllers/Notifications.js');
+var Settings = require('cloud/Settings.js');
 
 /*
  *	sendPushForUserPostedMessageToGroup
@@ -72,9 +73,9 @@ function sendPushForUserPostedAlertToGroup (user, message, group) {
 
 	var alertMessage = message.get("body");
 	// var title = user.get("displayName") + " - " + theGroup.get("name");
-	var title = "ALERT!"
+	var title = "ALERT!";
 	return Notifications.pushNotifToQuery(alertMessage, pushQuery, title);
-};
+}
 
 /* 	UNTESTED UNIMPLEMENTED * 	UNTESTED UNIMPLEMENTED * 	UNTESTED UNIMPLEMENTED * 	UNTESTED UNIMPLEMENTED
  *	sendPushForUserCreatedNewEventForGroup
@@ -165,4 +166,4 @@ exports.sendPushForUserHasBeenInvitedToGroup = function (user, invitedBy, group)
 			});
 		});
 	});
-}
+};

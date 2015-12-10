@@ -2,6 +2,7 @@ var Users = require('cloud/Controllers/Users.js');
 var Contracts = require('cloud/Controllers/Contracts.js');
 var Mail = require('cloud/Interfaces/MailInterface.js');
 var Notifications = require('cloud/Interfaces/NotificationsInterface.js');
+var Settings = require('cloud/Settings.js');
 
 var STATUS_EXISTING_USER_INVITED = "UserInvited";
 var STATUS_NON_USER_INVITED = "NonUserInvited";
@@ -15,16 +16,16 @@ var STATUS_CONTRACT_COMPLETED = "Signed";
  */
 Parse.Cloud.define("requestMembershipToGroup", function(request, response) {
 
-	console.log("CloudCode: User requested membership to group");
-	console.log("User id: " + request.user.id);
-	console.log("Group id: " + request.params.groupId);
+	if(Settings.LogAll === true) console.log("CloudCode: User requested membership to group");
+	if(Settings.LogAll === true) console.log("User id: " + request.user.id);
+	if(Settings.LogAll === true) console.log("Group id: " + request.params.groupId);
 
 	var Group = Parse.Object.extend("Group");
     var group = new Group();
     group.id = request.params.groupId;
 
 	exports.requestMembershipToGroup(request.user, group).then( function(success) {
-		console.log("Created a contract for the user");
+		if(Settings.LogAll === true) console.log("Created a contract for the user");
 		//Send 4 since that is the new status of the user (see android/iphone source for this)
 		response.success(4);	
 	}, function(error) {
@@ -81,7 +82,7 @@ Parse.Cloud.define("acceptMembershipToGroup", function(request, response) {
  */
 Parse.Cloud.define("approveMembershipForGroup", function(request, response) {
 
-	console.log("Going to approve membership for group with id: " + request.params.groupId);
+	if(Settings.LogAll === true) console.log("Going to approve membership for group with id: " + request.params.groupId);
 	var Group = Parse.Object.extend("Group");
     var groupPlaceholder = new Group();
     groupPlaceholder.id = request.params.groupId;
@@ -99,10 +100,10 @@ Parse.Cloud.define("approveMembershipForGroup", function(request, response) {
     // Limit the status to "UserRequested" 
     requestedMembershipQuery.equalTo("status", STATUS_USER_REQUESTED_MEMBERSHIP);
 
-    console.log("Going to find the contract now");
+    if(Settings.LogAll === true) console.log("Going to find the contract now");
     requestedMembershipQuery.first().then(function (theContract) {
     	if(theContract !== null && theContract !== undefined) {
-    		console.log("Found the contract");
+    		if(Settings.LogAll === true) console.log("Found the contract");
 		    Contracts.approveMembershipForGroup(request.user, inviteePlaceholder, theContract).then(function(success) {
 		    	Notifications.sendPushForUsersInvitationAcceptedForGroup(inviteePlaceholder, groupPlaceholder).then(function (success) {
 		    		response.success();
@@ -111,7 +112,7 @@ Parse.Cloud.define("approveMembershipForGroup", function(request, response) {
 		    	});
 				
 			}, function(error) {
-				console.log("Error while approving membership");
+				if(Settings.LogAll === true) console.log("Error while approving membership");
 				console.error(error);
 				response.error();
 			});
@@ -134,22 +135,22 @@ Parse.Cloud.define("approveMembershipForGroup", function(request, response) {
  *	@return A Parse.Promise once the save completes
  */
 exports.acceptAllOpenContractsForNewUser = function acceptAllOpenContractsForNewUser(newUser, contracts){
-	console.log("In acceptAllOpenContractsForNewUser");
-	console.log("Contracts: " + JSON.stringify(contracts, null, 4));
+	if(Settings.LogAll === true) console.log("In acceptAllOpenContractsForNewUser");
+	if(Settings.LogAll === true) console.log("Contracts: " + JSON.stringify(contracts, null, 4));
 	if(contracts === undefined){
 		return Contracts.getAllContractsForNewUser(newUser).then(function(allContracts){
-			console.log("Found all the contracts: " + JSON.stringify(allContracts, null, 4));
+			if(Settings.LogAll === true) console.log("Found all the contracts: " + JSON.stringify(allContracts, null, 4));
 			return acceptAllOpenContractsForNewUser(newUser, allContracts);		
 		});
 	}
 
 	var nextContract = contracts.pop();
-	console.log("Next contract for signing: " + JSON.stringify(nextContract, null, 4));
+	if(Settings.LogAll === true) console.log("Next contract for signing: " + JSON.stringify(nextContract, null, 4));
 	if(nextContract === undefined){
 		return Parse.Promise.as("Joined all of our open contracts (if there were any)");
 	}else{
 		Contracts.acceptMembershipToGroup(newUser, nextContract).then(function(){
-			console.log("Should have joined another contract");
+			if(Settings.LogAll === true) console.log("Should have joined another contract");
 			acceptAllOpenContractsForNewUser(newUser, contracts);
 		});
 	}
@@ -165,14 +166,14 @@ exports.acceptAllOpenContractsForNewUser = function acceptAllOpenContractsForNew
  *	@return A Parse.Promise once the save completes
  */
 exports.inviteToGroup = function inviteToGroup(inviteeEmail, invitedBy, group) {
-	console.log("In inviteToGroup");
+	if(Settings.LogAll === true) console.log("In inviteToGroup");
 	return Users.getUserWithEmail(inviteeEmail).then(function(theUser) 
 	{
 		if (theUser) { //If the user exists, we are inviting a pre-existing user
-			console.log("User exists so inviting a pre-existing user");
+			if(Settings.LogAll === true) console.log("User exists so inviting a pre-existing user");
 			return Contracts.inviteUserToGroup(theUser, invitedBy, group);
 		} else { //If the user does not yet exist, they are not a user of Declare Home yet
-			console.log("No use found so inviting non user");
+			if(Settings.LogAll === true) console.log("No use found so inviting non user");
 			return Contracts.inviteNonUserToGroup(inviteeEmail, invitedBy, group);
 		}
 	}, function(error) {
@@ -190,7 +191,7 @@ exports.inviteToGroup = function inviteToGroup(inviteeEmail, invitedBy, group) {
  *	@return A Parse.Promise
  */
 exports.requestMembershipToGroup = function (requester, group){
-	console.log("Going to create a contract for the user");
+	if(Settings.LogAll === true) console.log("Going to create a contract for the user");
 	return Contracts.createContractWithRequsterForGroup(requester, group).then(function(theContract) {
 		return Mail.sendMembershipRequestEmailToAdminsOfGroup(requester, group).then(function (success) {
 			return Notifications.sendPushForUserHasRequestedMembershipForGroup(requester, group);
